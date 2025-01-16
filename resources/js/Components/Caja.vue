@@ -420,8 +420,8 @@ window.Echo.channel(`pedidos_sucursal_${sucursalId}`)
       descuento: order.descuento?.toFixed(2) || 0,
       propina: order.propina?.toFixed(2) || 0,
       fecha: order.created_at, // Fecha del pedido
-      tipo: order.tipo, // Tipo de pedido: Para llevar o en mesa
       // Puedes agregar más campos según sea necesario
+      tipo: order.para_mesa ? 'Local' : 'Para llevar',
     }),
   })
     .then((response) => response.json())
@@ -439,3 +439,4 @@ window.Echo.channel(`pedidos_sucursal_${sucursalId}`)
 };
 
 </script>
+
