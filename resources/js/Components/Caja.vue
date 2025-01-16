@@ -414,7 +414,7 @@ window.Echo.channel(`pedidos_sucursal_${sucursalId}`)
         nombre: product.producto.nombre,
         cantidad: product.cantidad,
         precio: product.producto.precio,
-        total: (product.cantidad * parseFloat(product.producto.precio)).toFixed(2), // Total por producto
+        total: (product.cantidad * parseFloat(product.producto.precio))?.toFixed(2) || 0, // Total por producto
       })),
       total: (order.productos.reduce((sum, product) => sum + product.cantidad * parseFloat(product.producto.precio), 0) - order.descuento + order.propina).toFixed(2), // Total con descuento y propina
       descuento: order.descuento.toFixed(2),
