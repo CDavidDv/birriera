@@ -1,0 +1,1 @@
+import{o,c as a,w as t,a as r,u as s,j as n}from"./app-ChauIB5d.js";const i={__name:"AuthenticationCardLogo",setup(l){return(u,e)=>(o(),a(s(n),{href:"/",class:"justify-center flex rounded-full overflow-hidden h-48"},{default:t(()=>e[0]||(e[0]=[r("img",{src:"images/logo.png",alt:"logo"},null,-1)])),_:1}))}};export{i as _};

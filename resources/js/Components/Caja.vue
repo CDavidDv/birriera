@@ -409,7 +409,8 @@ window.Echo.channel(`pedidos_sucursal_${sucursalId}`)
     },
     body: JSON.stringify({
       order_id: order.id,
-      mesa: order.mesa ? order.mesa.nombre : 'Para llevar', // Si tiene mesa, envíala, si no, 'Para llevar'
+      mesa: order.mesa ? order?.mesa?.nombre : 'Para llevar', // Si tiene mesa, envíala, si no, 'Para llevar'
+      nombre_cliente: order?.nombre_cliente || 'Sin nombre', // Nombre del cliente o 'Sin nombre' si no hay
       productos: order.productos.map(product => ({
         nombre: product.producto.nombre,
         cantidad: product.cantidad,
@@ -433,7 +434,7 @@ window.Echo.channel(`pedidos_sucursal_${sucursalId}`)
       }
     })
     .catch((error) => {
-      console.error('Error en la impresión del ticket:', error.message);
+      console.error('Error en la impresión del ticket:', error);
       showToast('error', 'Error al imprimir el ticket');
     });
 };
