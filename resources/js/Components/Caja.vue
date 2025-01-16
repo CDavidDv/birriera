@@ -433,7 +433,7 @@ window.Echo.channel(`pedidos_sucursal_${sucursalId}`)
       }
     })
     .catch((error) => {
-      console.error('Error en la impresión del ticket:', error);
+      console.error('Error en la impresión del ticket:', error.message);
       showToast('error', 'Error al imprimir el ticket');
     });
 };
