@@ -425,11 +425,11 @@ window.Echo.channel(`pedidos_sucursal_${sucursalId}`)
         precio: product.producto.precio,
         total: (product.cantidad * parseFloat(product.producto.precio)), // Total por producto
       })),
-      totalN: (order.productos.reduce((sum, product) => sum + product.cantidad * parseFloat(product.producto.precio)) - order.descuento + order.propina), // Total con descuento y propina
+      total: totalN,
       descuento: order.descuento || 0,
       propina: order.propina || 0,
       fecha: order.created_at, // Fecha del pedido
-      // Puedes agregar más campos según sea necesario
+      // Puedes agregar más campos según sea necesario 
       tipo: order.para_mesa ? 'Local' : 'Para llevar',
     }),
   })
