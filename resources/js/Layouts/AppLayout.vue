@@ -49,7 +49,7 @@ const { props } = usePage()
                             <!-- Logo -->
                             <div class="shrink-0 flex items-center">
                                 <Link :href="route('dashboard')" v-if="$page.props.auth.user.roles[0].name === 'admin' || $page.props.auth.user.roles[0].name === 'mesero'" class="block h-16 p-1 w-auto">
-                                    <ApplicationMark  />
+                                    <ApplicationMark class="block h-16 p-1 w-auto" />
                                 </Link>
                                 <Link :href="route('home')" v-else>
                                     <ApplicationMark class="block h-16 p-1 w-auto" />
