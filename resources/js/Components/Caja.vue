@@ -36,7 +36,7 @@
               class="flex justify-between"
             >
               <span>{{ product.cantidad }}x {{ product.producto.nombre }}</span>
-              <span>${{ (product.cantidad * parseFloat(product.producto.precio)).toFixed(2) }}</span>
+              <span>${{ (product.cantidad * parseFloat(product.producto.precio))?.toFixed(2) }}</span>
             </div>
           </div>
         </div>
@@ -44,7 +44,7 @@
         <div class="space-y-2 mb-4">
           <div class="flex justify-between">
             <span>Subtotal</span>
-            <span>${{ subtotal.toFixed(2) }}</span>
+            <span>${{ subtotal?.toFixed(2) }}</span>
           </div>
           <div class="flex justify-between items-center">
             <span>Descuento</span>
@@ -85,7 +85,7 @@
 
         <div class="flex justify-between items-center text-xl font-bold mb-6">
           <span>Total</span>
-          <span>${{ total.toFixed(2) }}</span>
+          <span>${{ total?.toFixed(2) }}</span>
         </div>
 
         <div class="space-y-4">
@@ -120,7 +120,7 @@
           </div>
           <div v-if="selectedPaymentMethod === 'cash'" class="flex justify-between items-center">
             <span>Cambio:</span>
-            <span>${{ change.toFixed(2) }}</span>
+            <span>${{ change?.toFixed(2) || 0}}</span>
           </div>
 
           <button
@@ -416,9 +416,9 @@ window.Echo.channel(`pedidos_sucursal_${sucursalId}`)
         precio: product.producto.precio,
         total: (product.cantidad * parseFloat(product.producto.precio))?.toFixed(2) || 0, // Total por producto
       })),
-      total: (order.productos.reduce((sum, product) => sum + product.cantidad * parseFloat(product.producto.precio), 0) - order.descuento + order.propina).toFixed(2), // Total con descuento y propina
-      descuento: order.descuento.toFixed(2),
-      propina: order.propina.toFixed(2),
+      total: (order.productos.reduce((sum, product) => sum + product.cantidad * parseFloat(product.producto.precio), 0) - order.descuento + order.propina)?.toFixed(2) || 0, // Total con descuento y propina
+      descuento: order.descuento?.toFixed(2) || 0,
+      propina: order.propina?.toFixed(2) || 0,
       fecha: order.created_at, // Fecha del pedido
       tipo: order.tipo, // Tipo de pedido: Para llevar o en mesa
       // Puedes agregar más campos según sea necesario
