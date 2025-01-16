@@ -4,22 +4,28 @@ namespace App\Http\Controllers;
 
 use App\Models\CorteCaja;
 use App\Models\Inventario;
+use App\Models\Mesa;
+use App\Models\Pedidos;
 use App\Models\Sucursal;
 use App\Models\User;
 use App\Models\Venta;
 use App\Models\VentaProducto;
 use Illuminate\Foundation\Application;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
 use Spatie\Permission\Models\Role;
+use Illuminate\Support\Facades\Auth;
 
 class DashboardController extends Controller
 {
     public function index()
     {
+        if (Auth::check()) {
+            return redirect()->route('dashboard');
+        }
+
         return Inertia::render('Auth/Login', [
             'canLogin' => Route::has('login'),
             'canRegister' => Route::has('register'),
@@ -33,17 +39,37 @@ class DashboardController extends Controller
         // Obtén el usuario autenticado
         $user = Auth::user();
 
+        if ($user->hasRole('cocina')) return redirect()->route('cocina');
+        if ($user->hasRole('caja')) return redirect()->route('corte-caja');
+        if ($user->hasRole('empacador')) return redirect()->route('empacar');
+
         // Asume que el usuario tiene una sucursal_id
         $sucursalId = $user->sucursal_id;
 
         // Filtra el inventario por sucursal_id
         $inventario = Inventario::where('sucursal_id', $sucursalId)->get();
-        $ticketId = session('ticket_id');
         
+        $ordenes = Pedidos::with(['productos.producto'])
+            ->with('mesa')
+            ->whereNotIn('estado', ['finalizado', 'cancelado'])
+            ->whereIn('tipo_pedido', ['normal', 'mixto'])
+            ->where('sucursal_id', $sucursalId)
+            ->get();
+
+        $ordenesParaLlevar = Pedidos::with(['productos.producto'])
+            ->whereNotIn('estado', ['finalizado', 'cancelado'])
+            ->where('tipo_pedido', 'para_llevar')
+            ->where('sucursal_id', $sucursalId)
+            ->get();
+        
+        
+        $mesas = Mesa::where('sucursal_id', $sucursalId)->get();
 
         return Inertia::render('Dashboard/index', [
             'inventario' => $inventario,
-            'ticket_id' => $ticketId
+            'mesas' => $mesas,
+            'ordenes' => $ordenes,
+            'ordenesParaLlevar' => $ordenesParaLlevar
         ]);
     }
 
@@ -53,7 +79,7 @@ class DashboardController extends Controller
 
     
 
-    public function hornear()
+    public function entregar()
     {
         // Obtén el usuario autenticado
         $user = Auth::user();

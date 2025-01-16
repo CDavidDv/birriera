@@ -10,7 +10,7 @@
         @click="changeTab(tab.value)"
         :class="[
           'px-4 py-2 mx-1 rounded-full transition-colors duration-200 ease-in-out', 
-          currentTab === tab.value ? 'bg-orange-500 text-white' : 'bg-gray-200 hover:bg-gray-300'
+          currentTab === tab.value ? 'bg-green-500 text-white' : 'bg-gray-200 hover:bg-gray-300'
         ]"
       >
         {{ tab.label }}
@@ -75,7 +75,7 @@
 
         <!-- Botones de acción -->
         <div class="flex justify-end">
-          <button type="submit" class="bg-orange-500 text-white px-4 py-2 rounded hover:bg-orange-600 transition-colors duration-200 ease-in-out">
+          <button type="submit" class="bg-green-500 text-white px-4 py-2 rounded hover:bg-green-600 transition-colors duration-200 ease-in-out">
             {{ form.id ? 'Actualizar' : 'Agregar' }}
           </button>
           <button v-if="form.id" @click="resetForm" type="button" class="ml-2 bg-gray-300 text-gray-800 px-4 py-2 rounded hover:bg-gray-400 transition-colors duration-200 ease-in-out">
@@ -110,7 +110,7 @@
                 </div>
               </div>
               <div>
-                <button @click="editItem(item, item.id)" class="text-orange-500 hover:text-orange-700 mr-2">
+                <button @click="editItem(item, item.id)" class="text-green-500 hover:text-green-700 mr-2">
                   <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
                     <path d="M13.586 3.586a2 2 0 112.828 2.828l-.793.793-2.828-2.828.793-.793zM11.379 5.793L3 14.172V17h2.828l8.38-8.379-2.83-2.828z" />
                   </svg>
@@ -166,7 +166,7 @@ const singularTabTitle = computed(() => currentTab.value === 'users' ? 'Usuario'
 const errors = ref({}); 
 const currentItems = computed(() => currentTab.value === 'users' ? props.users : props.sucursales);
 
-const availableRoles = computed(() => props.roles.filter(role => ['admin', 'trabajador'].includes(role.name)));
+const availableRoles = computed(() => props.roles.filter(role => ['admin', 'mesero', 'caja', 'cocina', 'empacador', 'sucursales'].includes(role.name)));
 
 const itemName = (item) => item.name || item.email || item.nombre;
 

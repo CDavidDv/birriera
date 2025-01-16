@@ -23,5 +23,10 @@ class SucursalSeeder extends Seeder
             'direccion' => 'Calle 2',
             'telefono' => '123',
         ]);
+        Sucursal::create([
+            'nombre' => 'Sucursal 3',
+            'direccion' => 'Calle 3',
+            'telefono' => '123',
+        ]);
     }
 }

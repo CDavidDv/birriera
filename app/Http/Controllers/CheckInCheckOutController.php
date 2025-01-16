@@ -28,7 +28,7 @@ class CheckInCheckOutController extends Controller
             ->whereDate('created_at', today())
             ->get();
 
-        return Inertia::render('Checador/index', [
+        return Inertia::render('Cocina/index', [
             'checkIns' => $checkIns, 
             'sucursal' => $sucursal
         ]);

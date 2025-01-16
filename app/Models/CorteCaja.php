@@ -16,7 +16,13 @@ class CorteCaja extends Model
     protected $fillable = [
         'sucursal_id',
         'usuario_id',
+        'saldo_inicial',
         'fecha',
+        'gastos',
+        'dinero_total',
+        'saldo_actual',
+        'total_entradas',
+        'total_salidas',
         'dinero_inicio',
         'dinero_final',
         'ventas_total',

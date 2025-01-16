@@ -27,12 +27,13 @@ const logout = () => {
 };
 
 const { props } = usePage()
-console.log(props.user.roles[0])
+
 
 </script>
 
 <template>
-    <div class="absolute inset-0 -z-10 min-h-max w-full  bg-gray-100 bg-[radial-gradient(#824800_1px,#f8d7c180_1px);] [background-size:16px_16px]">
+    <div class="absolute inset-0 -z-10 min-h-max w-full  bg-gray-100 bg-[radial-gradient(#824800_1px,#f1f1f9_1px);] [background-size:16px_16px]">
+        <div class="absolute inset-0 -z-10 h-full w-full bg-gray-50 bg-[linear-gradient(to_right,#f0f0f0_2px,transparent_1px),linear-gradient(to_bottom,#f0f0f0_2px,transparent_1px)] bg-[size:1rem_1rem]"></div>
         <Head :title="title" />
 
         <Banner />
@@ -48,40 +49,50 @@ console.log(props.user.roles[0])
                             <!-- Logo -->
                             <div class="shrink-0 flex items-center">
                                 <Link :href="route('dashboard')">
-                                    <ApplicationMark class="block h-14 p-1 w-auto" />
+                                    <ApplicationMark class="block h-16 p-1 w-auto" />
                                 </Link>
                             </div>
 
                             <!-- Navigation Links -->
-                            <div class="hidden space-x-8 sm:-my-px sm:ms-10 sm:flex">
+                            <div class="hidden space-x-8 sm:-my-px sm:ms-10 sm:flex" v-if="$page.props.auth.user.roles[0].name === 'admin' || $page.props.auth.user.roles[0].name === 'mesero' || $page.props.auth.user.roles[0].name === 'caja' || $page.props.auth.user.roles[0].name === 'empacador'">
                                 <NavLink :href="route('dashboard')" :active="route().current('dashboard')">
                                     Home
                                 </NavLink>
                             </div>
-                            <div class="hidden space-x-8 sm:-my-px sm:ms-10 sm:flex">
-                                <NavLink :href="route('hornear')" :active="route().current('hornear')">
-                                    Hornear
+                            <div class="hidden space-x-8 sm:-my-px sm:ms-10 sm:flex" v-if="$page.props.auth.user.roles[0].name === 'admin' || $page.props.auth.user.roles[0].name === 'mesero' ">
+                                <NavLink :href="route('Entregar')" :active="route().current('Entregar')">
+                                    Entregar
                                 </NavLink>
                             </div>
-                            <div class="hidden space-x-8 sm:-my-px sm:ms-10 sm:flex">
+                            <div class="hidden space-x-8 sm:-my-px sm:ms-10 sm:flex" v-if="$page.props.auth.user.roles[0].name === 'admin'">
                                 <NavLink :href="route('inventario')" :active="route().current('inventario')">
                                     Inventario
                                 </NavLink>
                             </div>
-                            <div class="hidden space-x-8 sm:-my-px sm:ms-10 sm:flex">
-                                <NavLink :href="route('checador')" :active="route().current('checador')">
-                                    Checador
+                            <div class="hidden space-x-8 sm:-my-px sm:ms-10 sm:flex" v-if="$page.props.auth.user.roles[0].name === 'admin' || $page.props.auth.user.roles[0].name === 'cocina' || $page.props.auth.user.roles[0].name === 'empacador'">
+                                <NavLink :href="route('cocina')" :active="route().current('cocina')">
+                                    Cocina
                                 </NavLink>
                             </div>
                             
-                            <div class="hidden space-x-8 sm:-my-px sm:ms-10 sm:flex" v-if="props.user.roles[0] !== 'trabajador'">
+                            <div class="hidden space-x-8 sm:-my-px sm:ms-10 sm:flex" v-if="$page.props.auth.user.roles[0].name === 'admin'">
                                 <NavLink :href="route('personal')" :active="route().current('personal')">
                                     Personal
                                 </NavLink>
                             </div>
-                            <div class="hidden space-x-8 sm:-my-px sm:ms-10 sm:flex">
+                            <div class="hidden space-x-8 sm:-my-px sm:ms-10 sm:flex" v-if="$page.props.auth.user.roles[0].name === 'admin' || $page.props.auth.user.roles[0].name === 'caja'">
                                 <NavLink :href="route('corte-caja')" :active="route().current('corte-caja')">
                                     Corte
+                                </NavLink>
+                            </div>
+                            <div class="hidden space-x-8 sm:-my-px sm:ms-10 sm:flex" v-if="$page.props.auth.user.roles[0].name === 'admin' || $page.props.auth.user.roles[0].name === 'caja'">
+                                <NavLink :href="route('caja')" :active="route().current('caja')">
+                                    Caja
+                                </NavLink>
+                            </div>
+                            <div class="hidden space-x-8 sm:-my-px sm:ms-10 sm:flex" v-if="$page.props.auth.user.roles[0].name === 'admin' || $page.props.auth.user.roles[0].name === 'empacador'">
+                                <NavLink :href="route('empacar')" :active="route().current('empacar')">
+                                    Empacar
                                 </NavLink>
                             </div>
                         </div>
@@ -222,36 +233,46 @@ console.log(props.user.roles[0])
 
                 <!-- Responsive Navigation Menu -->
                 <div :class="{'block': showingNavigationDropdown, 'hidden': ! showingNavigationDropdown}" class="sm:hidden">
-                    <div class="pt-2 pb-3 space-y-1">
-                        <ResponsiveNavLink :href="route('dashboard')" :active="route().current('dashboard')">
+                    <div class="pt-2 pb-3 space-y-1" v-if="$page.props.auth.user.roles[0].name === 'admin' || $page.props.auth.user.roles[0].name === 'mesero'">
+                        <ResponsiveNavLink :href="route('dashboard')" :active="route().current('dashboard')" >
                             Home
                         </ResponsiveNavLink>
                     </div>
-                    <div class="pt-2 pb-3 space-y-1">
-                        <ResponsiveNavLink :href="route('hornear')" :active="route().current('hornear')">
-                            Hornear
+                    <div class="pt-2 pb-3 space-y-1" v-if="$page.props.auth.user.roles[0].name === 'admin' || $page.props.auth.user.roles[0].name === 'mesero'">
+                        <ResponsiveNavLink :href="route('Entregar')" :active="route().current('Entregar')">
+                            Entregar
                         </ResponsiveNavLink>
                     </div>
-                    <div class="pt-2 pb-3 space-y-1">
+                    <div class="pt-2 pb-3 space-y-1" v-if="$page.props.auth.user.roles[0].name === 'admin'">
                         <ResponsiveNavLink :href="route('inventario')" :active="route().current('inventario')">
                             Inventario
                         </ResponsiveNavLink>
                     </div>
-                    <div class="pt-2 pb-3 space-y-1">
-                        <ResponsiveNavLink :href="route('checador')" :active="route().current('checador')">
-                            Checador
+                    <div class="pt-2 pb-3 space-y-1" v-if="$page.props.auth.user.roles[0].name === 'admin' || $page.props.auth.user.roles[0].name === 'cocina' || $page.props.auth.user.roles[0].name === 'empacador'">
+                        <ResponsiveNavLink :href="route('cocina')" :active="route().current('cocina')">
+                            Cocina
                         </ResponsiveNavLink>
                     </div>
                     
-                    <div class="pt-2 pb-3 space-y-1" v-if="props.user.roles[0] !== 'trabajador'">
-                        
+                    <div class="pt-2 pb-3 space-y-1" v-if="$page.props.auth.user.roles[0].name === 'admin'">
                         <ResponsiveNavLink :href="route('personal')" :active="route().current('personal')" >
                             Personal
                         </ResponsiveNavLink>
                     </div>
-                    <div class="pt-2 pb-3 space-y-1">
+                    <div class="pt-2 pb-3 space-y-1" v-if="$page.props.auth.user.roles[0].name === 'admin' || $page.props.auth.user.roles[0].name === 'caja' || $page.props.auth.user.roles[0].name === 'mesero'">
                         <ResponsiveNavLink :href="route('corte-caja')" :active="route().current('corte-caja')">
                             Corte
+                        </ResponsiveNavLink>
+                    </div>
+
+                    <div class="pt-2 pb-3 space-y-1" v-if="$page.props.auth.user.roles[0].name === 'admin' || $page.props.auth.user.roles[0].name === 'caja'">
+                        <ResponsiveNavLink :href="route('caja')" :active="route().current('caja')">
+                            Caja
+                        </ResponsiveNavLink>
+                    </div>
+                    <div class="pt-2 pb-3 space-y-1" v-if="$page.props.auth.user.roles[0].name === 'admin' || $page.props.auth.user.roles[0].name === 'empacador' || $page.props.auth.user.roles[0].name === 'cocina'">
+                        <ResponsiveNavLink :href="route('empacar')" :active="route().current('empacar')">
+                            Empacadores
                         </ResponsiveNavLink>
                     </div>
 

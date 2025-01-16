@@ -4,6 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use App\Models\Pedidos;
 
 class Sucursal extends Model
 {
@@ -25,7 +26,7 @@ class Sucursal extends Model
 
     public function pedidos()
     {
-        return $this->hasMany(Pedido::class);
+        return $this->hasMany(Pedidos::class);
     }
 
     public function checkInCheckOuts()

@@ -13,13 +13,14 @@ return new class extends Migration
     {
         Schema::create('inventarios', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('sucursal_id')->constrained('sucursales');
+            $table->unsignedInteger('sucursal_id');
             $table->string('nombre');
-            $table->enum('tipo', ['bebida', 'general', 'relleno', 'masa', 'extras', 'empanadas dulces', 'empanadas saladas', 'pastes']);
-            $table->string('detalle')->nullable();
+            $table->string('tipo');
             $table->integer('cantidad')->default(0);
             $table->decimal('costo', 10, 2)->nullable();
             $table->decimal('precio', 10, 2)->nullable();
+            $table->string('detalle')->nullable();
+            $table->longText('imagen')->nullable();
             $table->timestamps();
         });
     }

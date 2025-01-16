@@ -44,7 +44,7 @@ const submit = () => {
         <form @submit.prevent="submit">
             
             <div>
-                <InputLabel for="email" value="Matricula" />
+                <InputLabel for="email" value="Credenciales" />
                 <TextInput
                     id="text"
                     v-model="form.email"

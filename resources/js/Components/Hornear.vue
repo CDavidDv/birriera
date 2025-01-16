@@ -1,258 +1,189 @@
 <template>
-  <div class="container mx-auto p-4">
-    <h1 class="text-2xl font-bold mb-4">Sistema de Horneado</h1>
-
-    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-      <!-- Sección de Masas y Rellenos -->
-      <div class="bg-white shadow rounded-lg p-6">
-        <h2 class="text-xl font-semibold mb-4">Ingredientes Disponibles</h2>
-        
-        <div class="mb-6">
-          <h3 class="text-lg font-medium mb-2">Masas</h3>
-          <ul class="list-disc pl-5">
-            <li v-for="masa in masasActualizadas" :key="masa.id" class="flex justify-between">
-              <span>{{ masa.nombre }}</span>
-              <span class="font-semibold">{{ masa.cantidad }} unidades</span>
-            </li>
-          </ul>
-        </div>
-
-        <div>
-          <h3 class="text-lg font-medium mb-2">Rellenos</h3>
-          <ul class="list-disc pl-5">
-            <li v-for="relleno in rellenosActualizados" :key="relleno.id" class="flex justify-between">
-              <span>{{ relleno.nombre }}</span>
-              <span class="font-semibold">{{ relleno.cantidad }} unidades</span>
-            </li>
-          </ul>
-        </div>
-      </div>
-
-      <!-- Sección de Creación de Pastes -->
-      <div class="bg-white shadow rounded-lg p-6">
-        <h2 class="text-xl font-semibold mb-4">Crear Nuevo Paste/Empanada</h2>
-        <form @submit.prevent="crearPaste" class="space-y-4">
-          
-          <div>
-            <label for="relleno" class="block text-sm font-medium text-gray-700">Seleccionar Relleno</label>
-            <select v-model="nuevoPaste.relleno" id="relleno" required class="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-orange-500 focus:border-orange-500 sm:text-sm rounded-md">
-              <option value="">Seleccione un relleno</option>
-              <option v-for="relleno in rellenos" :key="relleno.id" :value="relleno.nombre">{{ relleno.nombre }}</option>
-            </select>
-          </div>
-          
-          <div>
-            <label for="cantidad" class="block text-sm font-medium text-gray-700">Cantidad</label>
-            <input 
-              v-model.number="nuevoPaste.cantidad" 
-              type="number" 
-              id="cantidad" 
-              required 
-              min="1" 
-              :max="maxCantidadDisponible"
-              class="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-orange-500 focus:border-orange-500 sm:text-sm"
-            >
-          </div>
-          
+  <div class="min-h-screen bg-gray-50 p-6">
+    <div class="max-w-7xl mx-auto flex gap-6">
+      <!-- Main Content -->
+      <div class="flex-1">
+        <!-- Categories -->
+        <div class="grid grid-cols-4 sm:grid-cols-8 gap-4 mb-8">
           <button 
-            type="submit" 
-            :disabled="!isFormValid"
-            class="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-orange-600 hover:bg-orange-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-orange-500 disabled:opacity-50 disabled:cursor-not-allowed"
+            v-for="category in categories" 
+            :key="category.name"
+            :class="[
+              'p-4 rounded-xl flex flex-col items-center gap-2 transition-colors',
+              category.active ? 'bg-blue-500 text-white' : 'bg-white hover:bg-gray-50'
+            ]"
           >
-            Asignar Unidades
+            <component :is="category.icon" class="w-6 h-6" />
+            <div class="text-sm">
+              <div class="font-medium">{{ category.name }}</div>
+              <div class="text-xs opacity-75"></div>
+            </div>
           </button>
-        </form>
-      </div>
-    </div>
-
-    <!-- Sección de Horneado -->
-    <div class="mt-8 bg-white shadow rounded-lg p-6">
-      <h2 class="text-xl font-semibold mb-4">Horno</h2>
-      <div v-if="timerStore.horneando">
-        <p class="text-lg mb-2">
-          Horneando grupo de pastes:
-        </p>
-        <ul>
-          <li v-for="paste in timerStore.pastesHorneando" :key="paste.nombre">
-            {{ paste.cantidad }} {{ paste.nombre }} - masa {{ paste.masa }}
-          </li>
-        </ul>
-        <div class="w-full bg-gray-200 rounded-full h-2.5 dark:bg-gray-700 mb-4">
-          <div 
-            class="bg-orange-600 h-2.5 rounded-full transition-all duration-100" 
-            :style="{ width: `${(timerStore.tiempoTranscurrido / timerStore.tiempoTotal) * 100}%` }"
-          ></div>
         </div>
-        <p>Tiempo restante: {{ formatearTiempo(timerStore.tiempoRestante) }}</p>
 
+        <!-- Menu Section -->
+        <h2 class="text-2xl font-bold mb-6">Menú</h2>
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          <div v-for="item in menuItems" :key="item.id" class="bg-white rounded-xl p-4">
+            <div class="flex gap-4">
+              <img :src="item.image" :alt="item.name" class="w-20 h-20 rounded-xl object-cover" />
+              <div class="flex-1">
+                <h3 class="font-medium mb-1">{{ item.name }}</h3>
+                <p class="text-sm text-gray-500 mb-2">{{ item.description }}</p>
+                <div class="flex items-center justify-between">
+                  <span class="text-lg font-bold">${{ item.price.toFixed(1) }}</span>
+                  <div class="flex items-center gap-3">
+                    <button 
+                      @click="decrementQuantity(item)"
+                      class="w-8 h-8 rounded-full flex items-center justify-center border border-gray-200 hover:bg-gray-50"
+                      :disabled="!item.quantity"
+                    >
+                      <MinusIcon class="w-4 h-4" />
+                    </button>
+                    <span class="w-4 text-center">{{ item.quantity }}</span>
+                    <button 
+                      @click="incrementQuantity(item)"
+                      class="w-8 h-8 rounded-full flex items-center justify-center bg-blue-500 text-white hover:bg-blue-600"
+                    >
+                      <PlusIcon class="w-4 h-4" />
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
       </div>
-      <div v-else>
-        <p class="text-lg mb-4">El horno está disponible</p>
-        <button 
-          @click="timerStore.iniciarHorneado" 
-          :disabled="!timerStore.pastesPorHornear.length" 
-          class="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 disabled:opacity-50 disabled:cursor-not-allowed"
-        >
-          Iniciar Horneado de Grupo
-        </button>
-      </div>
-    </div>
 
-    <!-- Lista de Pastes por Hornear -->
-    <div class="mt-8 bg-white shadow rounded-lg p-6">
-      <h2 class="text-xl font-semibold mb-4">Grupos de Pastes por Hornear</h2>
-      <div v-if="timerStore.pastesPorHornear.length === 0" class="text-gray-500 text-center py-4">
-        No hay grupos de pastes en la cola de horneado
-      </div>
-      <ul v-else class="divide-y divide-gray-200">
-        <li v-for="paste in timerStore.pastesPorHornear" :key="paste.id" class="py-4 flex justify-between items-center">
-          <span>{{ paste.cantidad }} {{ paste.nombre }} - masa {{ paste.masa }}</span>
-          <button 
-            @click="timerStore.cancelarPaste(paste.id)" 
-            class="bg-red-600 text-white hover:bg-red-800 rounded-lg px-2 py-1 focus:outline-none focus:underline"
-          >
-            Cancelar
+      <!-- Invoice -->
+      <div class="w-80 flex-shrink-0">
+        <div class="bg-white rounded-xl p-6 sticky top-6">
+          <h2 class="text-xl font-bold mb-6">Ticket</h2>
+          <div class="space-y-4 mb-6">
+            <div v-for="item in cartItems" :key="item.id" class="flex gap-3">
+              <img :src="item.image" :alt="item.name" class="w-16 h-16 rounded-lg object-cover" />
+              <div class="flex-1">
+                <h3 class="font-medium">{{ item.name }}</h3>
+                <p class="text-sm text-gray-400">Sin verdura</p>
+                <span class="text-sm font-medium">${{ item.price.toFixed(1) }}</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="border-t pt-4 mb-6">
+            <div class="flex justify-between mb-2">
+              <span class="text-gray-900 font-bold">Total</span>
+              <span class="font-medium">${{ total.toFixed(1) }}</span>
+            </div>
+          </div>
+
+          
+
+          <button class="w-full py-3 px-4 rounded-lg bg-blue-500 text-white font-medium hover:bg-blue-600">
+            Place An Order
           </button>
-        </li>
-      </ul>
+        </div>
+      </div>
     </div>
   </div>
 </template>
 
 <script setup>
-import { ref, computed } from 'vue';
-import { useTimerStore } from '@/stores/useTimerStore';
-import { usePage } from '@inertiajs/vue3';
-import Swal from 'sweetalert2';
+import { ref, computed } from 'vue'
+import { 
+  CakeIcon, 
+  UtensilsCrossedIcon, 
+  CoffeeIcon, 
+  SoupIcon,
+  IceCreamIcon,
+  SaladIcon,
+  ChefHatIcon,
+  GlassWaterIcon,
+  PlusIcon,
+  MinusIcon,
+  PillBottle,
+  CupSoda,
+  PackageOpenIcon,
+  ForkKnifeCrossed
+} from 'lucide-vue-next'
 
-const timerStore = useTimerStore();
-const { props } = usePage();
-const inventario = props.inventario;
+const categories = ref([
+  { name: 'Comida', icon: ForkKnifeCrossed, active: false },
+  { name: 'Paquetes', icon: PackageOpenIcon, active: true },
+  { name: 'Bebidas', icon: CupSoda, active: false },
+  { name: 'Extras', icon: SoupIcon, active: false },
+])
 
-
-const masas = computed(() => inventario.filter(item => item.tipo === 'masa'));
-const rellenos = computed(() => inventario.filter(item => item.tipo === 'relleno'));
-
-const masasActualizadas = computed(() => {
-  return masas.value.map(masa => {
-    const cantidadHorneando = timerStore.pastesHorneando
-      .filter(paste => paste.masa === masa.nombre)
-      .reduce((acc, paste) => acc + paste.cantidad, 0);
-    
-    return {
-      ...masa,
-      cantidad: masa.cantidad - cantidadHorneando
-    };
-  });
-});
-
-const rellenosActualizados = computed(() => {
-  return rellenos.value.map(relleno => {
-    const cantidadHorneando = timerStore.pastesHorneando
-      .filter(paste => paste.nombre === relleno.nombre)
-      .reduce((acc, paste) => acc + paste.cantidad, 0);
-
-    return {
-      ...relleno,
-      cantidad: relleno.cantidad - cantidadHorneando
-    };
-  });
-});
-
-
-const nuevoPaste = ref({
-  masa: '',
-  relleno: '',
-  cantidad: 1
-});
-
-
-const determinarMasaPorRelleno = (nombreRelleno) => {
-  const masaPorRelleno = {
-    'Papa con carne': 'bola', //paste
-    'Crema con pollo': 'bola',  //paste
-    'Frijol con chorizo': 'bola', //paste
-    'Mole rojo': 'salada', //empanada salada
-    'Mole verde': 'salada', //empanada salada
-    'Salchicha': 'salada', //empanada salada
-    'Tinga': 'salada', //empanada salada
-    'Minero': 'salada', //empanada salada
-    'Atún': 'salada', //empanada salada
-    'Choriqueso': 'salada', //empanada salada
-    'Rajas con champiñones': 'salada', //empanada salada
-    'Hawaiano': 'dulce', //empanada dulce
-    'Arroz con leche': 'dulce', //empanada dulce
-    'Piña': 'dulce', //empanada dulce
-    'Manzana': 'dulce', //empanada dulce
-    'Zarzamora': 'dulce', //empanada dulce
-    'Cajeta': 'dulce', //empanada dulce
-    'Fresa': 'dulce', //empanada dulce
-    'Budin': 'dulce', //empanada dulce
-  };
-  return masaPorRelleno[nombreRelleno] || '';
-};
-
-// Agrupar pastes por tipo de relleno
-const crearPaste = () => {
-  const masaCorrespondiente = determinarMasaPorRelleno(nuevoPaste.value.relleno);
-  const masa = masasActualizadas.value.find(m => m.nombre === masaCorrespondiente);
-  const relleno = rellenosActualizados.value.find(r => r.nombre === nuevoPaste.value.relleno);
-
-  // Validación para evitar crear si no hay masa disponible
-  if (!masa || masa.cantidad <= 0) {
-    const Toast = Swal.mixin({
-        toast: true,
-        position: "top-end",
-        showConfirmButton: false,
-        timer: 1500,
-        timerProgressBar: true,
-        didOpen: (toast) => {
-            toast.onmouseenter = Swal.stopTimer;
-            toast.onmouseleave = Swal.resumeTimer;
-        }
-        });
-        Toast.fire({
-        icon: "error",
-        title: "No hay masa suficiente"
-        });
-    return;
+const menuItems = ref([
+  {
+    id: 1,
+    name: 'Taco',
+    description: 'Delicious beef lasagna with double chili Delicious beef',
+    price: 15.0,
+    quantity: 2,
+    image: 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAFAAAABQCAYAAACOEfKtAAAAAXNSR0IArs4c6QAAAohJREFUeF7t1dunAlEYBfBvIpGSrtJVL5H+//+i10Qv6Sq6kHroIh3fxz7mjHSqZZOsIWZq1jT7N2vvCXq93k24vS0QEPBtOwsSEPMjIOhHQAKiAmCeayABQQEwzgYSEBQA42wgAUEBMM4GEhAUAONsIAFBATDOBhIQFADjbCABQQEwzgYSEBQA42wgAUEBMM4GEhAUAONsIAFBATDOBhIQFADjbCABQQEwzgYSEBQA42wgAUEBMO69gZVKRcrlsgRBIMfjUfr9vt1ys9mUQqFg+/v9XobD4UtDuZdPp9PSarUkHo/L9XqV6XQqm83mpeu+erJXQB2QDnS73cpisZButyuHw8E+1WpV5vO5nM/nP+c8M4B8Pn83n0qlLK4PQ/9Xj90De+a675zjFVBvqNPpyG63M0C3r99nMhkZDAZ2z+12W06nk4zHYzvW1haLRZnNZnZcq9VktVrZNXTTB9NoNGS5XNoDcPulUun3vxRZmz+ZTKzhvjbvgOFptV6vDUmBooCuOW6gek42m7Wp7xocRlCger0usVjMIMMPSPfDLfU5jb0C6iDC7dEpfLlcbAo/aqCD0mZGYaMN1QbquqctTyaT39XAaAsciDbivzXQrWEKpuBuejvAXC5n3+n0dGtrIpH4vjUw/LbU9o1GIxv0o7ew/qbTV9+i99ZAt27q8qCbe7t/3VvY18L9Sdf1ugZ+0kB93QsBQVkCEhAUAONsIAFBATDOBhIQFADjbCABQQEwzgYSEBQA42wgAUEBMM4GEhAUAONsIAFBATDOBhIQFADjbCABQQEwzgYSEBQA42wgAUEBMM4GEhAUAONsIAFBATDOBhIQFADjbCABQQEwzgYSEBQA4z92vyNfXU0apAAAAABJRU5ErkJggg=='
+  },
+  {
+    id: 2,
+    name: 'Plato CHICO',
+    description: 'Delicious beef lasagna with double chili Delicious beef',
+    price: 85.0,
+    quantity: 2,
+    image: 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAFAAAABQCAYAAACOEfKtAAAAAXNSR0IArs4c6QAAAohJREFUeF7t1dunAlEYBfBvIpGSrtJVL5H+//+i10Qv6Sq6kHroIh3fxz7mjHSqZZOsIWZq1jT7N2vvCXq93k24vS0QEPBtOwsSEPMjIOhHQAKiAmCeayABQQEwzgYSEBQA42wgAUEBMM4GEhAUAONsIAFBATDOBhIQFADjbCABQQEwzgYSEBQA42wgAUEBMM4GEhAUAONsIAFBATDOBhIQFADjbCABQQEwzgYSEBQA42wgAUEBMO69gZVKRcrlsgRBIMfjUfr9vt1ys9mUQqFg+/v9XobD4UtDuZdPp9PSarUkHo/L9XqV6XQqm83mpeu+erJXQB2QDnS73cpisZButyuHw8E+1WpV5vO5nM/nP+c8M4B8Pn83n0qlLK4PQ/9Xj90De+a675zjFVBvqNPpyG63M0C3r99nMhkZDAZ2z+12W06nk4zHYzvW1haLRZnNZnZcq9VktVrZNXTTB9NoNGS5XNoDcPulUun3vxRZmz+ZTKzhvjbvgOFptV6vDUmBooCuOW6gek42m7Wp7xocRlCger0usVjMIMMPSPfDLfU5jb0C6iDC7dEpfLlcbAo/aqCD0mZGYaMN1QbquqctTyaT39XAaAsciDbivzXQrWEKpuBuejvAXC5n3+n0dGtrIpH4vjUw/LbU9o1GIxv0o7ew/qbTV9+i99ZAt27q8qCbe7t/3VvY18L9Sdf1ugZ+0kB93QsBQVkCEhAUAONsIAFBATDOBhIQFADjbCABQQEwzgYSEBQA42wgAUEBMM4GEhAUAONsIAFBATDOBhIQFADjbCABQQEwzgYSEBQA42wgAUEBMM4GEhAUAONsIAFBATDOBhIQFADjbCABQQEwzgYSEBQA4z92vyNfXU0apAAAAABJRU5ErkJggg=='
+  },
+  {
+    id: 3,
+    name: 'Plato GRANDE',
+    description: 'Delicious beef lasagna with double chili Delicious beef',
+    price: 110.0,
+    quantity: 0,
+    image: 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAFAAAABQCAYAAACOEfKtAAAAAXNSR0IArs4c6QAAAohJREFUeF7t1dunAlEYBfBvIpGSrtJVL5H+//+i10Qv6Sq6kHroIh3fxz7mjHSqZZOsIWZq1jT7N2vvCXq93k24vS0QEPBtOwsSEPMjIOhHQAKiAmCeayABQQEwzgYSEBQA42wgAUEBMM4GEhAUAONsIAFBATDOBhIQFADjbCABQQEwzgYSEBQA42wgAUEBMM4GEhAUAONsIAFBATDOBhIQFADjbCABQQEwzgYSEBQA42wgAUEBMO69gZVKRcrlsgRBIMfjUfr9vt1ys9mUQqFg+/v9XobD4UtDuZdPp9PSarUkHo/L9XqV6XQqm83mpeu+erJXQB2QDnS73cpisZButyuHw8E+1WpV5vO5nM/nP+c8M4B8Pn83n0qlLK4PQ/9Xj90De+a675zjFVBvqNPpyG63M0C3r99nMhkZDAZ2z+12W06nk4zHYzvW1haLRZnNZnZcq9VktVrZNXTTB9NoNGS5XNoDcPulUun3vxRZmz+ZTKzhvjbvgOFptV6vDUmBooCuOW6gek42m7Wp7xocRlCger0usVjMIMMPSPfDLfU5jb0C6iDC7dEpfLlcbAo/aqCD0mZGYaMN1QbquqctTyaT39XAaAsciDbivzXQrWEKpuBuejvAXC5n3+n0dGtrIpH4vjUw/LbU9o1GIxv0o7ew/qbTV9+i99ZAt27q8qCbe7t/3VvY18L9Sdf1ugZ+0kB93QsBQVkCEhAUAONsIAFBATDOBhIQFADjbCABQQEwzgYSEBQA42wgAUEBMM4GEhAUAONsIAFBATDOBhIQFADjbCABQQEwzgYSEBQA42wgAUEBMM4GEhAUAONsIAFBATDOBhIQFADjbCABQQEwzgYSEBQA4z92vyNfXU0apAAAAABJRU5ErkJggg=='
+  },
+  {
+    id: 4,
+    name: 'QUESABIRRIA',
+    description: 'Delicious beef lasagna with double chili Delicious beef',
+    price: 42.0,
+    quantity: 0,
+    image: 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAFAAAABQCAYAAACOEfKtAAAAAXNSR0IArs4c6QAAAohJREFUeF7t1dunAlEYBfBvIpGSrtJVL5H+//+i10Qv6Sq6kHroIh3fxz7mjHSqZZOsIWZq1jT7N2vvCXq93k24vS0QEPBtOwsSEPMjIOhHQAKiAmCeayABQQEwzgYSEBQA42wgAUEBMM4GEhAUAONsIAFBATDOBhIQFADjbCABQQEwzgYSEBQA42wgAUEBMM4GEhAUAONsIAFBATDOBhIQFADjbCABQQEwzgYSEBQA42wgAUEBMO69gZVKRcrlsgRBIMfjUfr9vt1ys9mUQqFg+/v9XobD4UtDuZdPp9PSarUkHo/L9XqV6XQqm83mpeu+erJXQB2QDnS73cpisZButyuHw8E+1WpV5vO5nM/nP+c8M4B8Pn83n0qlLK4PQ/9Xj90De+a675zjFVBvqNPpyG63M0C3r99nMhkZDAZ2z+12W06nk4zHYzvW1haLRZnNZnZcq9VktVrZNXTTB9NoNGS5XNoDcPulUun3vxRZmz+ZTKzhvjbvgOFptV6vDUmBooCuOW6gek42m7Wp7xocRlCger0usVjMIMMPSPfDLfU5jb0C6iDC7dEpfLlcbAo/aqCD0mZGYaMN1QbquqctTyaT39XAaAsciDbivzXQrWEKpuBuejvAXC5n3+n0dGtrIpH4vjUw/LbU9o1GIxv0o7ew/qbTV9+i99ZAt27q8qCbe7t/3VvY18L9Sdf1ugZ+0kB93QsBQVkCEhAUAONsIAFBATDOBhIQFADjbCABQQEwzgYSEBQA42wgAUEBMM4GEhAUAONsIAFBATDOBhIQFADjbCABQQEwzgYSEBQA42wgAUEBMM4GEhAUAONsIAFBATDOBhIQFADjbCABQQEwzgYSEBQA4z92vyNfXU0apAAAAABJRU5ErkJggg=='
+  },
+  {
+    id: 5,
+    name: '1/4 Kilo',
+    description: 'Delicious beef lasagna with double chili Delicious beef',
+    price: 130.0,
+    quantity: 0,
+    image: 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAFAAAABQCAYAAACOEfKtAAAAAXNSR0IArs4c6QAAAohJREFUeF7t1dunAlEYBfBvIpGSrtJVL5H+//+i10Qv6Sq6kHroIh3fxz7mjHSqZZOsIWZq1jT7N2vvCXq93k24vS0QEPBtOwsSEPMjIOhHQAKiAmCeayABQQEwzgYSEBQA42wgAUEBMM4GEhAUAONsIAFBATDOBhIQFADjbCABQQEwzgYSEBQA42wgAUEBMM4GEhAUAONsIAFBATDOBhIQFADjbCABQQEwzgYSEBQA42wgAUEBMO69gZVKRcrlsgRBIMfjUfr9vt1ys9mUQqFg+/v9XobD4UtDuZdPp9PSarUkHo/L9XqV6XQqm83mpeu+erJXQB2QDnS73cpisZButyuHw8E+1WpV5vO5nM/nP+c8M4B8Pn83n0qlLK4PQ/9Xj90De+a675zjFVBvqNPpyG63M0C3r99nMhkZDAZ2z+12W06nk4zHYzvW1haLRZnNZnZcq9VktVrZNXTTB9NoNGS5XNoDcPulUun3vxRZmz+ZTKzhvjbvgOFptV6vDUmBooCuOW6gek42m7Wp7xocRlCger0usVjMIMMPSPfDLfU5jb0C6iDC7dEpfLlcbAo/aqCD0mZGYaMN1QbquqctTyaT39XAaAsciDbivzXQrWEKpuBuejvAXC5n3+n0dGtrIpH4vjUw/LbU9o1GIxv0o7ew/qbTV9+i99ZAt27q8qCbe7t/3VvY18L9Sdf1ugZ+0kB93QsBQVkCEhAUAONsIAFBATDOBhIQFADjbCABQQEwzgYSEBQA42wgAUEBMM4GEhAUAONsIAFBATDOBhIQFADjbCABQQEwzgYSEBQA42wgAUEBMM4GEhAUAONsIAFBATDOBhIQFADjbCABQQEwzgYSEBQA4z92vyNfXU0apAAAAABJRU5ErkJggg=='
+  },
+  {
+    id: 6,
+    name: '1/2 Kilo',
+    description: 'Delicious beef lasagna with double chili Delicious beef',
+    price: 240.0,
+    quantity: 2,
+    image: 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAFAAAABQCAYAAACOEfKtAAAAAXNSR0IArs4c6QAAAohJREFUeF7t1dunAlEYBfBvIpGSrtJVL5H+//+i10Qv6Sq6kHroIh3fxz7mjHSqZZOsIWZq1jT7N2vvCXq93k24vS0QEPBtOwsSEPMjIOhHQAKiAmCeayABQQEwzgYSEBQA42wgAUEBMM4GEhAUAONsIAFBATDOBhIQFADjbCABQQEwzgYSEBQA42wgAUEBMM4GEhAUAONsIAFBATDOBhIQFADjbCABQQEwzgYSEBQA42wgAUEBMO69gZVKRcrlsgRBIMfjUfr9vt1ys9mUQqFg+/v9XobD4UtDuZdPp9PSarUkHo/L9XqV6XQqm83mpeu+erJXQB2QDnS73cpisZButyuHw8E+1WpV5vO5nM/nP+c8M4B8Pn83n0qlLK4PQ/9Xj90De+a675zjFVBvqNPpyG63M0C3r99nMhkZDAZ2z+12W06nk4zHYzvW1haLRZnNZnZcq9VktVrZNXTTB9NoNGS5XNoDcPulUun3vxRZmz+ZTKzhvjbvgOFptV6vDUmBooCuOW6gek42m7Wp7xocRlCger0usVjMIMMPSPfDLfU5jb0C6iDC7dEpfLlcbAo/aqCD0mZGYaMN1QbquqctTyaT39XAaAsciDbivzXQrWEKpuBuejvAXC5n3+n0dGtrIpH4vjUw/LbU9o1GIxv0o7ew/qbTV9+i99ZAt27q8qCbe7t/3VvY18L9Sdf1ugZ+0kB93QsBQVkCEhAUAONsIAFBATDOBhIQFADjbCABQQEwzgYSEBQA42wgAUEBMM4GEhAUAONsIAFBATDOBhIQFADjbCABQQEwzgYSEBQA42wgAUEBMM4GEhAUAONsIAFBATDOBhIQFADjbCABQQEwzgYSEBQA4z92vyNfXU0apAAAAABJRU5ErkJggg=='
   }
+])
 
-  if (masa && relleno && nuevoPaste.value.cantidad <= maxCantidadDisponible.value) {
-    masa.cantidad -= nuevoPaste.value.cantidad;
-    relleno.cantidad -= nuevoPaste.value.cantidad;
+const incrementQuantity = (item) => {
+  item.quantity++
+}
 
-    const grupoExistente = timerStore.pastesPorHornear.find(p => p.nombre === relleno.nombre);
-    if (grupoExistente) {
-      grupoExistente.cantidad += nuevoPaste.value.cantidad;
-    } else {
-      timerStore.agregarPaste({
-        id: Date.now(),
-        masa: masa.nombre,
-        nombre: relleno.nombre,
-        cantidad: nuevoPaste.value.cantidad
-      });
-    }
-
-    nuevoPaste.value = { masa: '', relleno: '', cantidad: 1 };
+const decrementQuantity = (item) => {
+  if (item.quantity > 0) {
+    item.quantity--
   }
-};
+}
 
-const maxCantidadDisponible = computed(() => {
-  const rellenoSeleccionado = rellenosActualizados.value.find(r => r.nombre === nuevoPaste.value.relleno);
-  return rellenoSeleccionado ? rellenoSeleccionado.cantidad : 1;
-});
+const cartItems = computed(() => 
+  menuItems.value.filter(item => item.quantity > 0)
+)
 
-const isFormValid = computed(() => {
-  return nuevoPaste.value.relleno && nuevoPaste.value.cantidad > 0 && nuevoPaste.value.cantidad <= maxCantidadDisponible.value;
-});
+const subTotal = computed(() => 
+  cartItems.value.reduce((sum, item) => sum + (item.price * item.quantity), 0)
+)
 
+const tax = computed(() => subTotal.value * 0.05)
 
-const formatearTiempo = (milisegundos) => {
-  const totalSegundos = Math.ceil(milisegundos / 1000); // Convertir a segundos
-  const minutos = Math.floor(totalSegundos / 60); // Obtener los minutos
-  const segundos = totalSegundos % 60; // Obtener los segundos restantes
-  return `${minutos}:${segundos.toString().padStart(2, '0')}`; // Asegurarse de que los segundos siempre tengan dos dígitos
-};
-
+const total = computed(() => subTotal.value + tax.value)
 </script>

@@ -16,7 +16,10 @@ class RoleSeeder extends Seeder
     {
         $role_admin = Role::create(['name' => 'admin']);
         $role_sucursal = Role::create(['name' => 'sucursal']);
-        $role_trabajador = Role::create(['name' => 'trabajador']);
+        $role_mesero = Role::create(['name' => 'mesero']);
+        $role_cocina = Role::create(['name' => 'cocina']);
+        $role_caja = Role::create(['name' => 'caja']);
+        $role_empacador = Role::create(['name' => 'empacador']);
 
         $permission_create_role = Permission::create(['name' => 'create role']);
         $permission_read_role = Permission::create(['name' => 'read role']);
@@ -64,7 +67,10 @@ class RoleSeeder extends Seeder
 
                 $role_admin->syncPermissions($permissions_admin);
                 $role_sucursal->syncPermissions($permissions_admin);
-                $role_trabajador->syncPermissions($permisisions_trabajador);
+                $role_mesero->syncPermissions($permisisions_trabajador);
+                $role_cocina->syncPermissions($permisisions_trabajador);
+                $role_caja->syncPermissions($permisisions_trabajador);
+                $role_empacador->syncPermissions($permisisions_trabajador);
 
     
     }

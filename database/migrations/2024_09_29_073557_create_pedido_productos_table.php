@@ -15,8 +15,11 @@ return new class extends Migration
             $table->id();
             $table->unsignedInteger('pedido_id')->constrained('pedidos');
             $table->unsignedInteger('inventario_id')->constrained('inventario');
+            $table->unsignedInteger('persona_id');
             $table->integer('cantidad');
-            $table->decimal('precio', 10, 2);
+            $table->decimal('subtotal', 10, 2);
+            $table->string('estado')->default('pendiente');
+            $table->string('personalizacion');
             $table->timestamps();
         });
     }
