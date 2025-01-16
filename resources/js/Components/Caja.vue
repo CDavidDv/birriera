@@ -425,7 +425,7 @@ window.Echo.channel(`pedidos_sucursal_${sucursalId}`)
         precio: product.producto.precio,
         total: (product.cantidad * parseFloat(product.producto.precio)), // Total por producto
       })),
-      total: totalN,
+      total: order.total,
       descuento: order.descuento || 0,
       propina: order.propina || 0,
       fecha: order.created_at, // Fecha del pedido
