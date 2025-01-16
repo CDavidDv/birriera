@@ -395,7 +395,7 @@ window.Echo.channel(`pedidos_sucursal_${sucursalId}`)
 
 
   const printTicket = (id) => {
-  const order = ordenes.value.find(order => order.id === id); // Encuentra el pedido por su ID
+  const order = ordenes.value.find(order => order.id === id) || props.ordenesRecientes.find(orden => orden.id === id); // Encuentra el pedido por su ID
   
   if (!order) {
     showToast('error', 'Pedido no encontrado');
