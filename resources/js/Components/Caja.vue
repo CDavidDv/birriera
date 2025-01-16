@@ -401,6 +401,14 @@ window.Echo.channel(`pedidos_sucursal_${sucursalId}`)
     showToast('error', 'Pedido no encontrado');
     return;
   }
+  const totalN = (order.productos.reduce((sum, product) => {
+    const cantidad = parseFloat(product.cantidad) || 0; // Asegura que cantidad sea un número
+    const precio = parseFloat(product.producto.precio) || 0; // Asegura que precio sea un número
+      return sum + cantidad * precio;
+  }, 0) 
+  - (parseFloat(order.descuento) || 0) // Asegura que descuento sea un número
+  + (parseFloat(order.propina) || 0)); // Asegura que propina sea un número
+
 
   fetch('https://print.test/print-ticket', {
     method: 'POST',
@@ -417,7 +425,7 @@ window.Echo.channel(`pedidos_sucursal_${sucursalId}`)
         precio: product.producto.precio,
         total: (product.cantidad * parseFloat(product.producto.precio)), // Total por producto
       })),
-      total: (order.productos.reduce((sum, product) => sum + product.cantidad * parseFloat(product.producto.precio)) - order.descuento + order.propina), // Total con descuento y propina
+      totalN: (order.productos.reduce((sum, product) => sum + product.cantidad * parseFloat(product.producto.precio)) - order.descuento + order.propina), // Total con descuento y propina
       descuento: order.descuento || 0,
       propina: order.propina || 0,
       fecha: order.created_at, // Fecha del pedido
