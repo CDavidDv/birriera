@@ -59,6 +59,11 @@ const { props } = usePage()
                                     Home
                                 </NavLink>
                             </div>
+                            <div class="hidden space-x-8 sm:-my-px sm:ms-10 sm:flex" v-if="$page.props.auth.user.roles[0].name === 'caja' || $page.props.auth.user.roles[0].name === 'empacador'">
+                                <NavLink :href="route('home')" :active="route().current('home')">
+                                    Home
+                                </NavLink>
+                            </div>
                             <div class="hidden space-x-8 sm:-my-px sm:ms-10 sm:flex" v-if="$page.props.auth.user.roles[0].name === 'admin' || $page.props.auth.user.roles[0].name === 'mesero' ">
                                 <NavLink :href="route('Entregar')" :active="route().current('Entregar')">
                                     Entregar

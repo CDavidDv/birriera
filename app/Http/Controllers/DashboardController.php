@@ -72,6 +72,41 @@ class DashboardController extends Controller
             'ordenesParaLlevar' => $ordenesParaLlevar
         ]);
     }
+    public function home()
+    {
+        // Obtén el usuario autenticado
+        $user = Auth::user();
+
+
+        // Asume que el usuario tiene una sucursal_id
+        $sucursalId = $user->sucursal_id;
+
+        // Filtra el inventario por sucursal_id
+        $inventario = Inventario::where('sucursal_id', $sucursalId)->get();
+        
+        $ordenes = Pedidos::with(['productos.producto'])
+            ->with('mesa')
+            ->whereNotIn('estado', ['finalizado', 'cancelado'])
+            ->whereIn('tipo_pedido', ['normal', 'mixto'])
+            ->where('sucursal_id', $sucursalId)
+            ->get();
+
+        $ordenesParaLlevar = Pedidos::with(['productos.producto'])
+            ->whereNotIn('estado', ['finalizado', 'cancelado'])
+            ->where('tipo_pedido', 'para_llevar')
+            ->where('sucursal_id', $sucursalId)
+            ->get();
+        
+        
+        $mesas = Mesa::where('sucursal_id', $sucursalId)->get();
+
+        return Inertia::render('Dashboard/index', [
+            'inventario' => $inventario,
+            'mesas' => $mesas,
+            'ordenes' => $ordenes,
+            'ordenesParaLlevar' => $ordenesParaLlevar
+        ]);
+    }
 
     
 
