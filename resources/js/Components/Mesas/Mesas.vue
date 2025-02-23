@@ -130,7 +130,7 @@
                 @click="substracItem"
                 class="w-full py-2 px-4 bg-amber-500 text-white rounded-lg font-medium hover:bg-amber-600 transition-colors"
               >
-                Quitar productos
+                Ver/Quitar productos
               </button>
               <button 
                   v-if="selectedTable && selectedTable.estado !== 'libre'"
