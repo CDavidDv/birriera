@@ -5,7 +5,7 @@
         <h1 class="text-3xl font-bold">Área de Mesas</h1>
         <div class="flex gap-2">
           <button
-            class="px-2 rounded-lg text-sm bg-purple-500 hover:bg-purple-600 text-white transition-colors" 
+            class="px-2 rounded-lg text-lg bg-purple-500 hover:bg-purple-600 text-white transition-colors" 
             @click="startOrderDelivery"
           >
             Crear pedido para llevar
@@ -44,15 +44,15 @@
               <component :is="getTableIcon(table.estado)" class="w-8 h-8 mx-auto mb-2" />
               
               <span class="font-medium">{{ table?.nombre || `Mesa ${table.id}` }}</span>
-              <span class="text-center flex justify-center items-center place-items-center text-sm font-bold text-gray-900 bg-gray-50 size-fit p-1 rounded-lg">{{ getStatusText(table.estado) }}</span>
+              <span class="text-center flex justify-center items-center place-items-center text-lg font-bold text-gray-900 bg-gray-50 size-fit p-1 rounded-lg">{{ getStatusText(table.estado) }}</span>
             </button>
           </div>
         </div>
 
         <!-- Panel Lateral -->
         <div class="w-full lg:w-80">
-          <div class="bg-white rounded-lg shadow-md p-6 mb-6">
-            <h2 class="text-xl font-semibold mb-4">Resumen de Mesas</h2>
+          <div class="bg-white text-xl font-semibold rounded-lg shadow-md p-6 mb-6">
+            <h2 class=" mb-4">Resumen de Mesas</h2>
             <div class="space-y-2">
               <div class="flex justify-between items-center">
                 <span class="flex items-center">
@@ -132,6 +132,13 @@
               >
                 Quitar productos
               </button>
+              <button 
+                  v-if="selectedTable && selectedTable.estado !== 'libre'"
+                  @click="paraLlevar"
+                  class="w-full py-2 px-4 bg-orange-500 text-white rounded-lg font-medium hover:bg-orange-600 transition-colors"
+                >
+                  Poner para llevar
+                </button>
               <div v-if="options && selectedTable && selectedTable.estado !== 'libre'"
               class="space-y-2">
 
@@ -143,7 +150,13 @@
                 >
                   Cambiar a otra mesa
                 </button>
-  
+              
+                <!--division-->
+                <div class="w-full h-4 flex items-center">
+                  <div class="w-full border">
+                  </div>
+                </div>
+
                 <button 
                   v-if="selectedTable && selectedTable.estado !== 'libre'"
                   @click="enviaraCaja"
@@ -152,15 +165,14 @@
                   Enviar a caja
                 </button>
   
-                <button 
-                  v-if="selectedTable && selectedTable.estado !== 'libre'"
-                  @click="paraLlevar"
-                  class="w-full py-2 px-4 bg-orange-500 text-white rounded-lg font-medium hover:bg-orange-600 transition-colors"
-                >
-                  Poner para llevar
-                </button>
+                
               </div>
 
+              <div class="w-full h-8 flex items-center">
+                  <div class="w-full border">
+                  </div>
+                </div>
+                
               <!--Cancelar pedido-->
               <button
                 v-if="selectedTable && selectedTable.estado !== 'libre'"

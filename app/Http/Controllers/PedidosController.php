@@ -198,6 +198,7 @@ class PedidosController extends Controller
                 // Actualizar cantidad y subtotal si ya existe
                 $pedidoProducto->cantidad += $producto['cantidad'];
                 $pedidoProducto->subtotal += $producto['subtotal'];
+                $pedidoProducto->estado = 'pendiente';
                 $pedidoProducto->save();
             } else {
                 // Crear un nuevo registro del producto en el pedido
@@ -426,7 +427,11 @@ class PedidosController extends Controller
                         $pedidoProducto->estado = 'espera_entrega';
                     }
                 }else{
-                    $pedidoProducto->estado = 'espera_empacar';
+                    if($pedidoProducto->estado === 'espera' || $pedidoProducto->estado === 'finalizar'){
+                        $pedidoProducto->estado = 'finalizar';
+                    }else{
+                        $pedidoProducto->estado = 'espera_entrega';
+                    }
                 }
                 
                 $pedidoProducto->save();
@@ -524,14 +529,25 @@ class PedidosController extends Controller
         $user = Auth::user();
         $sucursalId = $user->sucursal_id;
 
-         $ordenesPendientesParaLlevar = Pedidos::with(['productos.producto'])
-            ->with('mesa')
+        // $ordenesPendientesEntrega = Pedidos::with(['productos' => function ($query) {
+        //     $query->where('estado', 'para_llevar'); 
+        // }, 'productos.producto', 'mesa'])
+        // ->where('sucursal_id', $sucursalId)
+        // ->where('estado', 'espera_entrega')
+        // ->where('para_mesa', 1)
+        // ->get();
+
+        $ordenesPendientesParaLlevar = Pedidos::with(['productos.producto', 'mesa'])
+            
             ->where('sucursal_id', $sucursalId)
             ->whereIn('estado', ['espera_empacar', 'para_llevar', 'espera_entrega'])
             ->where('tipo_pedido', 'mixto')
             ->where('para_llevar', 1)
             ->get();
-        $ordenesPendientesEntrega = Pedidos::with(['productos.producto'])
+    
+
+        $ordenesPendientesEntrega = Pedidos::with(['productos.producto', 'mesa'])
+            
             ->with('mesa')
             ->where('sucursal_id', $sucursalId)
             ->whereIn('estado', ['espera_empacar', 'para_llevar'])
@@ -681,8 +697,8 @@ class PedidosController extends Controller
 
             $pedido->para_mesa = 0;
             $pedido->para_llevar = 1;
-            if($mesa->estado !== 'pendiente'){
-                $pedido->estado = 'para_llevar';
+            if($mesa->estado != 'pendiente' || $mesa->estado != 'espera_entrega' || $mesa->estado != 'espera'){
+                $pedido->estado = 'espera_empacar';
             }
 
             $pedido->tipo_pedido = 'mixto';        
@@ -691,8 +707,18 @@ class PedidosController extends Controller
 
             $pedidoProductos = PedidoProducto::where('pedido_id', $pedido->id)->get();
             foreach ($pedidoProductos as $pedidoProducto) {
-                if($mesa->estado !== 'pendiente'){
-                    $pedidoProducto->estado = 'para_llevar';
+                if($pedidoProducto->estado == 'pendiente'){
+                    $pedidoProducto->estado = $mesa->estado;
+                    $pedidoProducto->save();
+                }else if($pedidoProducto->estado == 'espera'){
+                    $pedidoProducto->estado = 'finalizar';
+                    $pedidoProducto->save();
+                }else if($pedidoProducto->estado == 'finalizado'){
+                    $pedidoProducto->estado = 'finalizado';
+                    $pedidoProducto->save();
+                }else if($pedidoProducto->estado == 'espera_entrega'){
+                    $pedidoProducto->estado = 'espera_empacar';
+                    $pedidoProducto->save();
                 }
             }
 
@@ -703,7 +729,7 @@ class PedidosController extends Controller
             return back()->with('success', 'Pedido completado exitosamente.');
             
         } catch (\Exception $e) {
-            return redirect()->route('cocina')->with('error', 'Pedido no pudo ser completado');
+            return back()->with('error', $e->getMessage());
             
         }
     }

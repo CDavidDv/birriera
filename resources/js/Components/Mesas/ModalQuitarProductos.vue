@@ -21,7 +21,7 @@
                                         Persona {{ person.id }}
                                     </option>
                                 </select>
-                                <button @click="addPerson" class="mt-2 text-blue-500 text-sm">+ Agregar Persona</button>
+                                <button @click="addPerson" class="mt-2 text-blue-500 text-xl">+ Agregar Persona</button>
                             </div>
 
                             <!-- Listado de pedidos por persona -->
@@ -35,25 +35,25 @@
                                     <img :src="item.imagen" :alt="item.nombre" class="w-16 h-16 rounded-lg object-cover" />
                                     <div class="flex-1">
                                         <h3 class="font-medium">{{ item.nombre }}</h3>
-                                        <h3 class="font-thin text-sm text-gray-500">{{ item.detalle }}</h3>
-                                        <span class="text-sm font-medium">${{ (item.precio * item.quantity).toFixed(1) }}</span>
+                                        <h3 class="font-thin text-xl text-gray-500">{{ item.detalle }}</h3>
+                                        <span class="text-xl font-medium">${{ (item.precio * item.quantity).toFixed(1) }}</span>
                                         <div class="flex w-full">
-                                            <button class="text-sm text-gray-50 bg-orange-400 hover:bg-orange-500 rounded-full p-1 hover:text-gray-700" @click="decrementQuantity(item, person.id)">
+                                            <button class="text-xl text-gray-50 bg-orange-400 hover:bg-orange-500 rounded-full p-1 hover:text-gray-700" @click="decrementQuantity(item, person.id)">
                                                 <MinusIcon />
                                             </button>
-                                            <button v-if="item.quantity < item.stock" :disabled="item.quantity >= item.stock" class="text-sm ml-4 text-gray-50 bg-blue-400 hover:bg-blue-500 rounded-full p-1 hover:text-gray-700" @click="incrementQuantity(item, person.id)">
+                                            <button v-if="item.quantity < item.stock" :disabled="item.quantity >= item.stock" class="text-xl ml-4 text-gray-50 bg-blue-400 hover:bg-blue-500 rounded-full p-1 hover:text-gray-700" @click="incrementQuantity(item, person.id)">
                                                 <PlusIcon />
                                             </button>
-                                            <button class="text-sm ml-6 text-gray-50 bg-red-400 hover:bg-red-500 rounded-full p-1 hover:text-gray-700" @click="removeItem(item.id, person.id)">
+                                            <button class="text-xl ml-6 text-gray-50 bg-red-400 hover:bg-red-500 rounded-full p-1 hover:text-gray-700" @click="removeItem(item.id, person.id)">
                                                 <XIcon />
                                             </button>
-                                            <button v-if="deletedProducts.some((p) => p.id === item.id && p.persona_id === person.id)" @click="restoreItem(item.id, person.id)" class="text-sm ml-6 text-gray-50 bg-green-400 hover:bg-green-500 rounded-full p-1 hover:text-gray-700">
+                                            <button v-if="deletedProducts.some((p) => p.id === item.id && p.persona_id === person.id)" @click="restoreItem(item.id, person.id)" class="text-xl ml-6 text-gray-50 bg-green-400 hover:bg-green-500 rounded-full p-1 hover:text-gray-700">
                                                 Restaurar
                                             </button>
                                         </div>
                                     </div>
                                     <div class="flex items-center justify-around flex-col">
-                                        <span class="text-sm">x{{ item.quantity }}</span>
+                                        <span class="text-xl">x{{ item.quantity }}</span>
                                     </div>
                                 </div>
                             </div>

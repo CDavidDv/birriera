@@ -45,12 +45,15 @@ function isOrderUrgent(createdAt) {
 
 function groupItemsByPerson(items) {
   return items.reduce((acc, item) => {
+    // Filtrar solo los productos con estado "finalizado" o "espera_empacar"
+    if (item.estado === 'finalizado' || item.estado === 'espera_empacar') {
       const personId = item.persona_id;
       if (!acc[personId]) {
-          acc[personId] = [];
+        acc[personId] = [];
       }
       acc[personId].push(item);
-      return acc;
+    }
+    return acc;
   }, {});
 }
 

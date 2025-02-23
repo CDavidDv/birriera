@@ -18,30 +18,30 @@
 
             <!-- Filtro por día, semana o mes -->
             <div class="p-5 border rounded-xl shadow-md">
-              <label for="filter" class="block text-sm font-medium text-gray-700 mb-2">Filtrar por:</label>
+              <label for="filter" class="block text-lg font-medium text-gray-700 mb-2">Filtrar por:</label>
               <div class="flex items-center gap-4">
                 <select
-                  class="block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-cyan-500 focus:border-cyan-500 sm:text-sm rounded-md"
+                  class="block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-cyan-500 focus:border-cyan-500 sm:text-lg rounded-md"
                   id="filter" v-model="selectedFilter">
                   <option value="day">Día</option>
                   <option value="week">Semana</option>
                   <option value="month">Mes</option>
                 </select>
                 <input
-                  class="block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-cyan-500 focus:border-cyan-500 sm:text-sm rounded-md"
+                  class="block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-cyan-500 focus:border-cyan-500 sm:text-lg rounded-md"
                   id="valueSelect"
                   :type="selectedFilter === 'day' ? 'date' : selectedFilter === 'week' ? 'week' : 'month'"
                   v-model="selectedValue" />
               </div>
               <div class="mt-4 flex justify-between">
                 <button
-                  class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-cyan-600 hover:bg-cyan-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-cyan-500"
+                  class="inline-flex items-center px-4 py-2 border border-transparent text-lg font-medium rounded-md text-white bg-cyan-600 hover:bg-cyan-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-cyan-500"
                   @click="fetchFilteredData">
                   <RefreshCcwIcon class="h-5 w-5 mr-2" />
                   Aplicar Filtro
                 </button>
                 <button
-                  class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-cyan-700 bg-cyan-100 hover:bg-cyan-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-cyan-500"
+                  class="inline-flex items-center px-4 py-2 border border-transparent text-lg font-medium rounded-md text-cyan-700 bg-cyan-100 hover:bg-cyan-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-cyan-500"
                   @click="resetFilters">
                   <XIcon class="h-5 w-5 mr-2" />
                   Limpiar Filtro
@@ -58,23 +58,23 @@
               </div>
               <div class="grid grid-cols-2 gap-4">
                 <div v-if="selectedFilter === 'day'">
-                  <p class="text-sm text-gray-600">Dinero inicial:</p>
+                  <p class="text-lg text-gray-600">Dinero inicial:</p>
                   <p class="font-medium text-gray-900">${{ safeToFixed(initialCash) }}</p>
                 </div>
                 <div v-if="selectedFilter === 'day'">
-                  <p class="text-sm text-gray-600">Dinero final:</p>
+                  <p class="text-lg text-gray-600">Dinero final:</p>
                   <p class="font-medium text-gray-900">${{ safeToFixed(finalCash) }}</p>
                 </div>
                 <div>
-                  <p class="text-sm text-gray-600">Efectivo:</p>
+                  <p class="text-lg text-gray-600">Efectivo:</p>
                   <p class="font-medium text-gray-900">${{ safeToFixed(cashPayments) }}</p>
                 </div>
                 <div>
-                  <p class="text-sm text-gray-600">Tarjetas:</p>
+                  <p class="text-lg text-gray-600">Tarjetas:</p>
                   <p class="font-medium text-gray-900">${{ safeToFixed(cardPayments) }}</p>
                 </div>
                 <div>
-                  <p class="text-sm text-gray-600">Total ventas:</p>
+                  <p class="text-lg text-gray-600">Total ventas:</p>
                   <p class="font-medium text-gray-900">${{ safeToFixed(Number(cashPayments) + Number(cardPayments)) }}
                   </p>
                 </div>
@@ -82,7 +82,7 @@
               <div v-if="isToday" class="space-y-6 p-4 flex  justify-end items-end border-t  border-gray-400 ">
                 <div class="grid gap-3 grid-cols-2 ">
                   <button @click="openModal('initialCash')" 
-                    :class="['inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white ',
+                    :class="['inline-flex items-center px-4 py-2 border border-transparent text-lg font-medium rounded-md text-white ',
                       !existentInitialCash ? 'opacity-100 cursor-not-allowed bg-gray-400 ' 
                       : 'bg-lime-600 hover:bg-lime-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-lime-500']"
                     :disabled="initialCash" >
@@ -91,7 +91,7 @@
                     Asignar cantidad inicial
                   </button>
                   <button @click="openModal('finalCash')"
-                  :class="['inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white ',
+                  :class="['inline-flex items-center px-4 py-2 border border-transparent text-lg font-medium rounded-md text-white ',
                       !existentFinalCash ? 'opacity-100 cursor-not-allowed bg-gray-400 ' 
                       : 'bg-lime-600 hover:bg-lime-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-lime-500']"
                     :disabled="finalCash" >
@@ -99,18 +99,18 @@
                     Asignar cantidad final
                   </button>
                   <button @click="openModal('withdraw')"
-                    class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-red-600 hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500">
+                    class="inline-flex items-center px-4 py-2 border border-transparent text-lg font-medium rounded-md text-white bg-red-600 hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500">
                     <ArrowDownIcon class="size-5 mr-2" />
                     Sacar dinero
                   </button>
                   <button @click="openModal('deposit')"
-                    class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
+                    class="inline-flex items-center px-4 py-2 border border-transparent text-lg font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
                     <ArrowUpIcon class="size-5 mr-2" />
                     Ingresar dinero
                   </button>
                   <span></span>
                   <button @click="openModal('addGastos')"
-                    class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
+                    class="inline-flex items-center px-4 py-2 border border-transparent text-lg font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
                     <Plus class="size-5 mr-2" />
                     Registrar gasto
                   </button>
@@ -133,7 +133,7 @@
                     <div>
                       
                       <p class="capitalize text-gray-500">Tipo: <span class=" text-black font-medium">{{ registro.tipo }}</span> </p>
-                      <p class="text-sm text-gray-500">Hora: {{ registro.updated_at.split('T')[1].split('.')[0] }}</p>
+                      <p class="text-lg text-gray-500">Hora: {{ registro.updated_at.split('T')[1].split('.')[0] }}</p>
                     </div>
                     <span :class="registro.tipo !== 'salida' ? 'text-green-600' : 'text-red-600'">
                       {{ (registro.tipo === 'entrada' || registro.tipo === 'corte-entrada' || registro.tipo === 'corte-salida') ? '+' : '-' }}${{ safeToFixed(registro.cantidad) }}
@@ -154,8 +154,8 @@
                     class="flex items-center justify-between border-b pb-2">
                     <div>
                       <p class="font-medium">Venta #{{ venta.id }}</p>
-                      <p class="text-sm text-gray-500">Día: {{ venta.updated_at.split('T')[0] }}</p>
-                      <p class="text-sm text-gray-500">Hora: {{ venta.updated_at.split('T')[1].split('.')[0] }}</p>
+                      <p class="text-lg text-gray-500">Día: {{ venta.updated_at.split('T')[0] }}</p>
+                      <p class="text-lg text-gray-500">Hora: {{ venta.updated_at.split('T')[1].split('.')[0] }}</p>
                     </div>
                     <span class="text-blue-600">${{ safeToFixed(venta.total) }}</span>
                   </li>

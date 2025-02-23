@@ -8,7 +8,7 @@
         <select
           id="order-selector"
           v-model="selectedOrderId"
-          class="w-full p-2 border rounded"
+          class="w-full p-2 border text-xl rounded"
         >
           <option
             v-for="order in ordenes"
@@ -66,7 +66,7 @@
                 :key="percentage"
                 @click="setTipPercentage(percentage)"
                 :class="[
-                  'px-2 py-1 rounded text-sm',
+                  'px-2 py-1 rounded text-lg',
                   tipPercentage === percentage ? 'bg-blue-500 text-white' : 'bg-gray-200'
                 ]"
               >
@@ -83,9 +83,9 @@
           </div>
         </div>
 
-        <div class="flex justify-between items-center text-xl font-bold mb-6">
+        <div class="flex justify-between items-center text-2xl font-bold mb-6">
           <span>Total</span>
-          <span>${{ total }}</span>
+          <span class="">${{ total }}</span>
         </div>
 
         <div class="space-y-4">
@@ -113,7 +113,7 @@
                 v-model.number="cashReceived"
                 type="number"
                 min="0"
-                class="border rounded-lg p-2 text-end"
+                class="border rounded-lg text-2xl p-2 text-end"
                 placeholder="0.00"
               />
             </div>
@@ -152,10 +152,10 @@
         >
           <div>
             <h3 class="font-medium">{{ ticket.mesa ? `Mesa: ${ticket?.mesa?.nombre}` : "Para llevar" }}</h3>
-            <p v-if="ticket?.nombre_cliente" class="text-gray-500 text-sm">A nombre #{{ ticket?.nombre_cliente }}</p>
-            <p v-else class="text-gray-500 text-sm">A nombre de: Sin nombre</p>
-            <p class="text-gray-500 text-sm">Orden #{{ ticket?.id }}</p>
-            <p class="text-gray-500 text-sm">Total: ${{ ticket.total }}</p>
+            <p v-if="ticket?.nombre_cliente" class="text-gray-500 text-lg">A nombre #{{ ticket?.nombre_cliente }}</p>
+            <p v-else class="text-gray-500 text-lg">A nombre de: Sin nombre</p>
+            <p class="text-gray-500 text-lg">Orden #{{ ticket?.id }}</p>
+            <p class="text-gray-500 text-lg">Total: ${{ ticket.total }}</p>
           </div>
           <button
             class="px-3 py-1 bg-blue-500 hover:bg-blue-400 text-white rounded"

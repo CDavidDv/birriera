@@ -14,7 +14,7 @@
                 </div>
                 <div class="flex items-center space-x-1">
                     <ClockIcon class="w-4 h-4 text-gray-400" />
-                    <span class="text-sm text-gray-600">
+                    <span class="text-lg text-gray-600">
                         {{ formatTime(order.created_at) }}
                     </span>
                 </div>
@@ -50,7 +50,7 @@
                             <span class="font-medium text-gray-900">{{ item.cantidad }}x</span>
                             <div class="flex flex-col">
                                 <span class="text-gray-900">{{ item.producto?.nombre }}</span>
-                                <span v-if="item.producto?.detalle" class="text-sm text-gray-500">
+                                <span v-if="item.producto?.detalle" class="text-lg text-gray-500">
                                     {{ item.producto?.detalle }}
                                     
                                 </span>
@@ -78,7 +78,7 @@
                             <span v-if="order.pagado" class="bg-green-500 text-white px-2 rounded-xl">
                                 Pagado 
                             </span>
-                            <span v-else class="bg-red-500 text-white text-sm px-2 rounded-xl">
+                            <span v-else class="bg-red-500 text-white text-lg px-2 rounded-xl">
                                 No pagado
                             </span>
                         </div>

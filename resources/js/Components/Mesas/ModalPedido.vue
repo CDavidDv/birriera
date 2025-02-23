@@ -1,53 +1,55 @@
 <template>
-  <div class="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
+  <div class="fixed  inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
     <div class="bg-gray-50 rounded-xl max-h-[90vh] w-full max-w-7xl overflow-auto">
-      <div class="p-6">
-        <div class="flex gap-6">
+      <div class="p-6 flex ">
+        <div class="flex w-full  gap-6">
           <!-- Main Content -->
-          <div class="flex-1">
+          <div class=" w-3/5 ">
             <!-- Categories -->
-            <div class="grid grid-cols-4 sm:grid-cols-8 gap-4 mb-8">
-              <button 
-                v-for="category in categories" 
-                :key="category.name"
-                @click="setActiveCategory(category)"
-                :class="[ 'p-4 rounded-xl flex flex-col items-center gap-2 transition-colors',
-                  category.active ? 'bg-blue-500 text-white' : 'bg-white hover:bg-gray-50'
-                ]"
-              >
-                <component :is="category.icon" class="w-6 h-6" />
-                <div class="text-sm font-medium">{{ category.name }}</div>
-              </button>
+            <div class="w-full">
+              <div class="flex overflow-x-auto gap-4">
+                <button 
+                  v-for="category in categories" 
+                  :key="category.name"
+                  @click="setActiveCategory(category)"
+                  :class="[ 'p-4 rounded-xl  size-fit flex flex-col items-center  transition-colors',
+                    category.active ? 'bg-blue-500 text-white' : 'bg-white hover:bg-gray-50'
+                  ]"
+                >
+                  <component :is="category.icon" class="w-6 h-6" />
+                  <div class="text-xl font-medium">{{ category.name }}</div>
+                </button>
+              </div>
             </div>
 
             <!-- Menu Section -->
-            <h2 class="text-2xl font-bold mb-6">Pedido para {{ table?.nombre || 'mesa desconocida' }}</h2>
+            <h2 class="text-2xl  font-bold mb-6">Pedido para {{ table?.nombre || 'mesa desconocida' }}</h2>
             
-            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-              <div v-for="item in filteredMenuItems" :key="item.id" class="bg-white rounded-xl p-4">
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+              <div v-for="item in filteredMenuItems" :key="item.id" class="bg-white size-fit rounded-xl p-1  ">
                 <div class="flex gap-4">
-                  <img :src="item.imagen" :alt="item.nombre" class="w-20 h-20 rounded-xl object-cover" />
-                  <div class="flex-1">
+                  <img :src="item.imagen" :alt="item.nombre" class="size-fit  rounded-xl object-cover" />
+                  <div class="flex-1 flex flex-col">
                     <h3 class="font-medium mb-1">{{ item.nombre }}</h3>
                     <span v-if="item.tipo === 'bebida'">Cantidad {{ item.cantidad }}</span>
-                    <p class="text-sm text-gray-500 mb-2">{{ item.detalle }}</p>
+                    <p class="text-xl text-gray-500 mb-2">{{ item.detalle }}</p>
                     <div class="flex items-center justify-between flex-col">
-                      <span class="text-lg font-bold">${{ item.precio|| 0 }}</span>
-                      <div class="flex items-center gap-3">
+                      <span class="text-2xl font-bold">${{ item.precio|| 0 }}</span>
+                      <div class="flex items-center">
                         <button 
                           @click="decrementQuantity(item, selectedPerson)"
-                          class="w-8 h-8 rounded-full flex items-center justify-center border border-gray-200 hover:bg-gray-50"
+                          class="w-8 h-8 rounded-full flex items-center justify-center border border-1 shadow-2xl border-gray-800 hover:bg-gray-50"
                           :disabled="item.quantity <= 0"
                         >
-                          <MinusIcon class="w-4 h-4" />
+                          <MinusIcon class="size-14" />
                         </button>
                         <span class="w-4 text-center">{{ item.quantity }}</span>
                         <button 
                           :disabled="item.cantidad == 0 && item.tipo == 'bebida'"
                           @click="incrementQuantity(item, selectedPerson)"
-                          class="w-8 h-8 rounded-full flex items-center justify-center bg-blue-500 text-white hover:bg-blue-600"
+                          class="w-8 h-8 rounded-full flex z-10 items-center justify-center bg-blue-500 text-white hover:bg-blue-600"
                         >
-                          <PlusIcon class="w-4 h-4" />
+                          <PlusIcon class="size-14" />
                         </button>
                       </div>
                     </div>
@@ -58,7 +60,7 @@
           </div>
 
           <!-- Invoice -->
-          <div class="w-80 flex-shrink-0">
+          <div class="w-2/5 ">
             <div class="bg-white rounded-xl p-6">
 
               <div class="flex justify-between items-center mb-6">
@@ -123,7 +125,7 @@
                 <select v-model="selectedPerson" class="w-full p-2 border rounded-md">
                   <option v-for="person in people" :key="person.id" :value="person.id">Persona {{ person.id }}</option>
                 </select>
-                <button @click="addPerson" class="mt-2 text-blue-500 text-sm">+ Agregar Persona</button>
+                <button @click="addPerson" class="mt-2 text-blue-500 text-xl">+ Agregar Persona</button>
               </div>
               
 
@@ -146,14 +148,14 @@
                   <div class="flex-1">
                     
                     <h3 class="font-medium">{{ item.nombre }}</h3>
-                    <h3 class=" font-thin text-sm text-gray-500">{{ item.detalle }}</h3>
-                    <span class="text-sm font-medium">${{ (item.precio * item.quantity).toFixed(1) }}</span>
+                    <h3 class=" font-thin text-xl text-gray-500">{{ item.detalle }}</h3>
+                    <span class="text-xl font-medium">${{ (item.precio * item.quantity).toFixed(1) }}</span>
                   
                   </div>
                   <div class="flex items-center justify-around flex-col">
-                    <span class="text-sm">x{{ item.quantity }}</span>
+                    <span class="text-2xl">x{{ item.quantity }}</span>
                     <span v-if="item.estado" :class="[
-                        'px-2 text-sm text-white rounded-lg flex flex-col justify-center items-center place-items-center transition-colors',
+                        'px-2 text-xl text-white rounded-lg flex flex-col justify-center items-center place-items-center transition-colors',
                         item.estado === 'libre' ? 'bg-green-400 hover:bg-green-200' : 
                         item.estado === 'ocupada' ? 'bg-red-400 hover:bg-red-200' : 
                         item.estado === 'espera_pago' ? 'bg-blue-400 hover:bg-blue-200' :
@@ -178,7 +180,7 @@
                 @click="handleSubmit"
                 :disabled="isSubmitting"
               >
-                <ChefHatIcon class="w-4 h-4" /> 
+                <ChefHatIcon class="size-8" /> 
                 Mandar a Cocina 
               </button>
 

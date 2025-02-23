@@ -12,8 +12,8 @@
                 <div class="flex flex-col">
                   <span class="text-lg font-bold text-gray-900">Orden #{{ order.id }}</span>
                   
-                  <span v-if="order.para_mesa" class="bg-green-500 rounded-xl px-2 text-white text-sm">Pedido para mesa</span>
-                  <span v-if="order.para_llevar" class="bg-yellow-500 rounded-xl px-2 text-white text-sm">Pedido para llevar</span>
+                  <span v-if="order.para_mesa" class="bg-green-500 rounded-xl px-2 text-white text- text-lg">Pedido para mesa</span>
+                  <span v-if="order.para_llevar" class="bg-yellow-500 rounded-xl px-2 text-white text-lg">Pedido para llevar</span>
                   
                 </div>
                 <span v-if="isOrderUrgent(order)"
@@ -23,7 +23,7 @@
               </div>
               <div class="flex items-center space-x-1">
                 <ClockIcon class="w-4 h-4 text-gray-400" />
-                <span class="text-sm text-gray-600">
+                <span class="text-lg text-gray-600">
                   {{ formatTime(order.created_at) }}
                 </span>
               </div>
@@ -51,7 +51,7 @@
                       <span class="font-medium text-gray-900">{{ item.cantidad }}x</span>
                       <div class="flex flex-col">
                         <span class="text-gray-900">{{ item?.producto?.nombre }}</span>
-                        <span v-if="item?.producto?.detalle" class="text-sm text-gray-500">
+                        <span v-if="item?.producto?.detalle" class="text-lg text-gray-500">
                           {{ item?.producto?.detalle }}
                         </span>
                       </div>
@@ -68,7 +68,7 @@
               <div class="flex justify-between space-x-4 ">
                 <div class="flex items-center space-x-2">
                   <MapPinIcon class="w-4 h-4 text-gray-400" />
-                  <span class="text-sm font-medium text-gray-700">
+                  <span class="text-2xl font-medium text-gray-700">
                     {{ order?.mesa?.nombre || 'Para llevar' }}
                   </span>
                 </div>
