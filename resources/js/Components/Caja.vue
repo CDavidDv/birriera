@@ -276,9 +276,9 @@ const procesarPago = () => {
         icon: 'success',
         title: 'Pago procesado con éxito.',
       });
+      printTicket(selectedOrderId.value)
       ordenes.value = response.props.ordenes || [];
       recentTickets.value = response.props.ordenesRecientes || [];
-      printTicket(selectedOrderId.value)
     },
     onError: (error) => {
       console.error('Error al procesar el pago:', error);
@@ -396,6 +396,8 @@ window.Echo.channel(`pedidos_sucursal_${sucursalId}`)
 
 
   const printTicket = (id) => {
+
+    console.log("El id de ticket")
     console.log("El id de ticket",id)
   const order = ordenes.value.find(order => order.id === id) || props.ordenesRecientes.find(orden => orden.id === id); // Encuentra el pedido por su ID
   
