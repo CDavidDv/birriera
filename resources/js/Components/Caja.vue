@@ -278,6 +278,7 @@ const procesarPago = () => {
       });
       ordenes.value = response.props.ordenes || [];
       recentTickets.value = response.props.ordenesRecientes || [];
+      printTicket(selectedOrderId.value)
     },
     onError: (error) => {
       console.error('Error al procesar el pago:', error);
