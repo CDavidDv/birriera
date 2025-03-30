@@ -10,7 +10,7 @@ class Pedidos extends Model
     use HasFactory;
     protected $table = 'pedidos';
     protected $fillable = ['sucursal_id', 'total', 'estado', 'para_mesa', 'para_llevar', 'tipo_pedido', 'prioridad',
-        'mesa_id',  'total', 'estado', 'personalizacion', 'sucursal_id', 'nombre_cliente'];
+        'mesa_id',  'total', 'estado', 'personalizacion', 'sucursal_id', 'nombre_cliente', 'observaciones'];
      
     public function persona()
     {

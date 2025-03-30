@@ -58,11 +58,11 @@
               </div>
               <div class="grid grid-cols-2 gap-4">
                 <div v-if="selectedFilter === 'day'">
-                  <p class="text-lg text-gray-600">Dinero inicial:</p>
+                  <p class="text-lg text-gray-600">Dinero al iniciar la caja:</p>
                   <p class="font-medium text-gray-900">${{ safeToFixed(initialCash) }}</p>
                 </div>
                 <div v-if="selectedFilter === 'day'">
-                  <p class="text-lg text-gray-600">Dinero final:</p>
+                  <p class="text-lg text-gray-600">Dinero al cerrar la caja:</p>
                   <p class="font-medium text-gray-900">${{ safeToFixed(finalCash) }}</p>
                 </div>
                 <div>
@@ -91,10 +91,14 @@
                     Asignar cantidad inicial
                   </button>
                   <button @click="openModal('finalCash')"
-                  :class="['inline-flex items-center px-4 py-2 border border-transparent text-lg font-medium rounded-md text-white ',
-                      !existentFinalCash ? 'opacity-100 cursor-not-allowed bg-gray-400 ' 
-                      : 'bg-lime-600 hover:bg-lime-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-lime-500']"
-                    :disabled="finalCash" >
+                          :class="[
+                            'inline-flex items-center px-4 py-2 border border-transparent text-lg font-medium rounded-md text-white',
+                            finalCash || !corte?.saldo_inicial
+                              ? 'opacity-50 cursor-not-allowed bg-gray-400' 
+                              : 'bg-lime-600 hover:bg-lime-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-lime-500'
+                          ]"
+                          :disabled="finalCash || !corte?.saldo_inicial"
+                  >
                     <Plus class="size-5 mr-2" />
                     Asignar cantidad final
                   </button>
@@ -117,6 +121,14 @@
                 </div>
               </div>
             </div>
+            <button @click="showModalCerrar = true"
+              class="inline-flex items-center px-4 py-2 border border-transparent text-lg font-medium rounded-md text-white bg-red-600 hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500"
+              :class="{ 'opacity-50 cursor-not-allowed': !isToday || !corte }"
+              :disabled="!isToday || !corte"
+              >
+              <FolderClosed class="size-5 mr-2" />
+              Cerrar corte
+            </button>
           </div>
 
           <!-- Sidebar (right column) -->
@@ -135,9 +147,10 @@
                       <p class="capitalize text-gray-500">Tipo: <span class=" text-black font-medium">{{ registro.tipo }}</span> </p>
                       <p class="text-lg text-gray-500">Hora: {{ registro.updated_at.split('T')[1].split('.')[0] }}</p>
                     </div>
-                    <span :class="registro.tipo !== 'salida' ? 'text-green-600' : 'text-red-600'">
-                      {{ (registro.tipo === 'entrada' || registro.tipo === 'corte-entrada' || registro.tipo === 'corte-salida') ? '+' : '-' }}${{ safeToFixed(registro.cantidad) }}
+                    <span :class="['text-lg', ['entrada', 'corte-entrada'].includes(registro.tipo) ? 'text-green-600' : 'text-red-600']">
+                      {{ ['entrada', 'corte-entrada'].includes(registro.tipo) ? '+' : '-' }}${{ safeToFixed(registro.cantidad) }}
                     </span>
+
                   </li>
                 </ul>
               </div>
@@ -177,6 +190,13 @@
     </div>
   </div>
 
+  <ModalCerrar 
+    v-if="showModalCerrar"
+    :is-visible="showModalCerrar"
+    @close="showModalCerrar = false"
+    @save="cerrarCorte"
+  />
+
   <!-- Modal para ingresar o sacar dinero -->
   <ModalCantidad
     v-if="showModal"
@@ -194,9 +214,10 @@
 import { ref, onMounted, computed } from 'vue'
 import { router, usePage } from '@inertiajs/vue3'
 import Swal from 'sweetalert2'
-import { RefreshCcwIcon, ArrowUpIcon, ArrowDownIcon, XIcon, Plus } from 'lucide-vue-next';
+import { RefreshCcwIcon, ArrowUpIcon, ArrowDownIcon, XIcon, Plus, FolderClosed } from 'lucide-vue-next';
 import ModalCantidad from './Caja/ModalCantidad.vue';
 import axios from 'axios';
+import ModalCerrar from './Caja/ModalCerrar.vue';
 
 
 const { props } = usePage()
@@ -206,11 +227,11 @@ const today = new Date()
 const selectedValue = ref(today?.toISOString().split('T')[0])
 const initialCash = ref(corte?.value?.saldo_inicial || 0)
 const existentInitialCash = ref(corte?.value?.saldo_inicial ? 0 : 1)
-const finalCash = ref(corte.value?.saldo_final || 0)
+const finalCash = ref(corte?.value?.saldo_final || 0)
 const existentFinalCash = ref(corte?.value?.saldo_final ? 0 : 1)
-const cashPayments = ref(0)
+const cashPayments = ref(corte?.value?.dinero_en_efectivo || 0)
 const dineroDisponible = ref(corte?.value?.dinero_total || 0)
-const cardPayments = ref(0)
+const cardPayments = ref(corte?.value?.dinero_tarjeta || 0)
 const productsUsed = ref([])
 const isLoading = ref(false)
 const error = ref('')
@@ -243,12 +264,11 @@ const fetchFilteredData = () => {
       value: selectedValue.value,
     })
     .then((response) => {
-      console.log(response.data);
       ventas.value = response.data.ventas;
       registrosCaja.value = response.data.logscaja;
       corte.value = response.data.corte;
       dineroDisponible.value = response?.data?.corte?.dinero_total || 0;
-      calculatePayments();
+      
       showToast("success", "Filtro actualizado correctamente");
     })
     .catch((error) => {
@@ -267,10 +287,6 @@ const resetFilters = () => {
   fetchFilteredData()
 }
 
-const calculatePayments = () => {
-  cashPayments.value = props.ventas.reduce((total, venta) => venta.metodo_pago === 'efectivo' ? Number(total) + Number(venta.total) : Number(total), 0)
-  cardPayments.value = props.ventas.reduce((total, venta) => venta.metodo_pago === 'tarjeta' ? Number(total) + Number(venta.total) : Number(total), 0)
-}
 
 const showToast = (icon, title) => {
   Swal.mixin({
@@ -311,9 +327,6 @@ const handleModalConfirm = () => {
   closeModal()
 }
 
-onMounted(() => {
-  calculatePayments()
-})
 
 const safeToFixed = (value) => {
   return parseFloat(value).toFixed(2)
@@ -342,15 +355,7 @@ const saveModal = (amount, motivo) => {
           showToast("success", "Gasto guardado correctamente")
         }
         //obtener Logs y ventas
-        axios.get('/corte-caja/obtener-datos')
-          .then(response => {
-              console.log(response.data); // Asegúrate de imprimir response.data
-              registrosCaja.value = response.data.logscaja;
-              ventas.value = response.data.ventas;
-          })
-          .catch(error => {
-              console.error('Error al obtener los datos:', error);
-        });
+        actualizarDatos()
 
       },
       onError(e) {
@@ -360,6 +365,50 @@ const saveModal = (amount, motivo) => {
     closeModal();
   }  
 };
+
+
+const actualizarDatos = () => {
+  axios.get('/corte-caja/obtener-datos')
+    .then(response => {
+      initialCash.value = response.data.corte?.saldo_inicial || 0
+      existentInitialCash.value = response.data.corte?.saldo_inicial ? 0 : 1
+      finalCash.value = response.data.corte?.saldo_final || 0
+      existentFinalCash.value = response.data.corte?.saldo_final ? 0 : 1
+      cashPayments.value = response.data.corte?.dinero_en_efectivo || 0
+      dineroDisponible.value = response.data.corte?.dinero_total || 0
+      cardPayments.value = response.data.corte?.dinero_tarjeta || 0
+    })  
+    .catch(error => {
+        console.error('Error al obtener los datos:', error);
+  });
+  
+}
+
+const showModalCerrar = ref(false)
+
+const cerrarCorte = (nota) => {
+  router.post('/corte-caja/cerrar-corte', {
+    corte_id: corte.value.id,
+    nota: nota,
+  }, {
+    preserveScroll: true,
+    onSuccess(e) {
+      if (e.props.flash.error) {
+        showToast("error", e.props.flash.error || "Error al cerrar el corte")
+      } else {
+        showToast("success", "Corte cerrado correctamente")
+        showModalCerrar.value = false
+        corte.value = e.props?.corte
+      }
+      //obtener Logs y ventas
+      actualizarDatos()
+    },
+    onError(e) {
+      showToast("error", e.error || "Error al cerrar el corte")
+    }
+  })
+}
+
 </script>
 
 <style scoped>

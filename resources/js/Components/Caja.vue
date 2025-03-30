@@ -261,7 +261,6 @@ const procesarPago = () => {
   }
 
   loading.value = true;
-  printTicket(selectedOrderId.value)
   
   router.post('/terminar_pedido', {
     id: selectedOrderId.value,
@@ -277,6 +276,7 @@ const procesarPago = () => {
         icon: 'success',
         title: 'Pago procesado con éxito.',
       });
+      printTicket(selectedOrderId.value)
       ordenes.value = response.props.ordenes || [];
       recentTickets.value = response.props.ordenesRecientes || [];
     },

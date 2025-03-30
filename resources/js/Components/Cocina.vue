@@ -48,12 +48,23 @@
                   class="flex items-start justify-between p-2 rounded-lg hover:bg-gray-50">
                   <div  v-if="item.estado !== 'entregado' ">
                     <div class="flex items-start space-x-3">
-                      <span class="font-medium text-gray-900">{{ item.cantidad }}x</span>
+                      <span class="font-medium text-gray-900 text-2xl">{{ item.cantidad }}x</span>
                       <div class="flex flex-col">
-                        <span class="text-gray-900">{{ item?.producto?.nombre }}</span>
+                        <span class="text-gray-900 text-2xl">{{ item?.producto?.nombre }}</span>
                         <span v-if="item?.producto?.detalle" class="text-lg text-gray-500">
                           {{ item?.producto?.detalle }}
                         </span>
+                        <div v-if="item?.personalizacion" class="capitalize flex gap-2 my-1 " v-for="observacion in item?.personalizacion.split(', ')">
+                          <span :class="{
+                            'text-white px-2 py-1 rounded-lg': true, // Siempre aplica estas clases base
+                            'bg-green-500': observacion.includes('con todo'), 
+                            'bg-orange-500': !observacion.includes('con todo')
+                          }">
+                            {{ observacion }}
+                          </span>
+
+                      </div>
+
                       </div>
                     </div>
                   </div>
@@ -67,24 +78,25 @@
             <div class="flex justify-around  w-full">
               <div class="flex justify-between space-x-4 ">
                 <div class="flex items-center space-x-2">
-                  <MapPinIcon class="w-4 h-4 text-gray-400" />
-                  <span class="text-2xl font-medium text-gray-700">
+                  <MapPinIcon class="size-7 text-gray-400" />
+                  <span class="text-3xl font-medium text-gray-700">
                     {{ order?.mesa?.nombre || 'Para llevar' }}
                   </span>
                 </div>
                 
+
                 <div class="flex items-center text-end space-x-2 ">
-                  <!-- <TimerIcon class="w-4 h-4 text-gray-400" />
-                  <span class="text-sm text-gray-600">
-                    {{ calculateEstimatedTime(order.productos) }} min
-                  </span> -->
                 </div>
               </div>
               
             </div>
             <div v-if="order.nombre_cliente" class="flex text-blue-500 w-full items-center space-x-2 justify-center">
-              <AlertCircle class="size-3" />
-              <span class=" font-bold ">A nombre de {{ order?.nombre_cliente }}</span>
+              <AlertCircle class="size-7" />
+              <span class=" font-semibold text-lg ">A nombre de <span class="font-bold text-black text-2xl">{{ order?.nombre_cliente }}</span></span>
+            </div>
+            <div v-if="order.observaciones" class="flex text-blue-500 w-full items-center space-x-2 justify-center">
+              <AlertCircle class="size-7" />
+              <span class=" font-semibold text-lg ">Observaciones: <span class="font-bold text-black text-2xl">{{ order?.observaciones }}</span></span>
             </div>
           </div>
 

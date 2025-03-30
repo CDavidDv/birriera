@@ -5,6 +5,7 @@ use App\Http\Controllers\CheckInCheckOutController;
 use App\Http\Controllers\CocinaController;
 use App\Http\Controllers\CorteCajaController;
 use App\Http\Controllers\DashboardController;
+use App\Http\Controllers\ImageController;
 use App\Http\Controllers\InventarioController;
 use App\Http\Controllers\MesaController;
 use App\Http\Controllers\PedidoController;
@@ -54,6 +55,11 @@ Route::middleware(['auth:sanctum', config('jetstream.auth_session'), 'verified',
     Route::post('/inventario', [InventarioController::class, 'store'])->name('inventario.store');
     Route::put('/inventario/{inventario}', [InventarioController::class, 'update'])->name('inventario.update');
     Route::delete('/inventario/{id}', [InventarioController::class, 'destroy'])->name('inventario.destroy');
+    Route::post('/images/upload', [ImageController::class, 'upload']);
+    Route::post('/api/images', [ImageController::class, 'upload']);
+
+    Route::get('/images/all', [ImageController::class, 'getImages']);
+
 
     Route::get('/cocina', [CocinaController::class, 'index'])->name("cocina");
     Route::post('/checkInOut', [CheckInCheckOutController::class, 'checkInOut'])->name('checkInOut');
@@ -86,6 +92,7 @@ Route::middleware(['auth:sanctum', config('jetstream.auth_session'), 'verified',
     
     Route::post('/corte-caja/guardar-inicial', [CorteCajaController::class, 'guardarInicial'])->name('corte-caja.guardar-inicial');
     Route::post('/corte-caja/guardar-final', [CorteCajaController::class, 'guardarFinal'])->name('corte-caja.guardar-final');
+    Route::post('/corte-caja/cerrar-corte', [CorteCajaController::class, 'cerrarCorte'])->name('corte-caja.cerrar-corte');
     
     Route::post('/corte-caja/filtro', [CorteCajaController::class, 'filtro'])->name('corte-caja.filtro');
 
@@ -96,4 +103,9 @@ Route::middleware(['auth:sanctum', config('jetstream.auth_session'), 'verified',
    
     Route::get('/empacar', [PedidosController::class, 'empacar'])->name('empacar');
     Route::post('/paraLlevar', [PedidosController::class, 'paraLlevar'])->name('paraLlevar');
+});
+
+// Redireccionar al inico si es otra url
+Route::fallback(function () {
+    return redirect()->route('dashboard');
 });

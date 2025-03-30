@@ -24,6 +24,7 @@
         <!-- Grouped Items -->
         <div class="divide-y">
             
+            
             <div
                 v-for="(personItems, personId) in order.groupedItems"
                 :key="personId"
@@ -47,9 +48,9 @@
                     <div>
                         <div class="flex items-start space-x-3" >
                             
-                            <span class="font-medium text-gray-900">{{ item.cantidad }}x</span>
+                            <span class="font-medium text-gray-900 text-2xl">{{ item.cantidad }}x</span>
                             <div class="flex flex-col">
-                                <span class="text-gray-900">{{ item.producto?.nombre }}</span>
+                                <span class="text-gray-900 text-xl">{{ item.producto?.nombre }}</span>
                                 <span v-if="item.producto?.detalle" class="text-lg text-gray-500">
                                     {{ item.producto?.detalle }}
                                     
@@ -83,8 +84,8 @@
                             </span>
                         </div>
                     </div>
-                    <span v-if="order?.nombre_cliente" class=" font-medium text-gray-700">
-                        A nombre de {{ order?.nombre_cliente }}
+                    <span v-if="order?.nombre_cliente" class=" font-medium text-lg text-gray-700">
+                        A nombre de <span class="font-bold text-2xl text-black">{{ order?.nombre_cliente }}</span>
                     </span>
                 </div>
             </div>

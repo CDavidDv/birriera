@@ -22,6 +22,7 @@ use App\Models\PedidoProducto;
 use App\Models\SeguimientoOrden;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Storage;
 use Inertia\Inertia;
 
 class PedidosController extends Controller
@@ -39,6 +40,8 @@ class PedidosController extends Controller
             'productos.*.subtotal' => 'nullable|numeric|min:0',
         ]);
 
+        
+
         // Determinar la prioridad del pedido
         $prioridad = $request->reConsumo ? 'urgente' : 'normal';
 
@@ -53,6 +56,7 @@ class PedidosController extends Controller
                 'tipo_pedido' => 'para_llevar',
                 'para_mesa' => 0,
                 'para_llevar' => 1,
+                'observaciones' => $request->observaciones,
                 'prioridad' => $prioridad,
             ]);
 
@@ -89,16 +93,73 @@ class PedidosController extends Controller
             ]);
 
         }else if ($request->reConsumo) {
-            $pedido = Pedidos::where('mesa_id', $request->mesa)
+
+
+            $pedido = null;
+            if($request->id_pedido_llevar){
+                $pedido = Pedidos::where('id', $request->id_pedido_llevar)
                 ->whereNotIn('estado', ['cancelado', 'finalizado'])
                 ->first();
-        
+            }else{
+                $pedido = Pedidos::where('mesa_id', $request->mesa)
+                    ->whereNotIn('estado', ['cancelado', 'finalizado'])
+                    ->first();
+                
+                if($request->para_llevar && $request->mesa){
+
+                    $mesa = Mesa::findOrFail($request->mesa);
+                    if($mesa->estado !== 'pendiente'){
+                        $mesa->estado = 'para_llevar';
+                        $mesa->save();
+                    }
+                    
+
+                    $pedido = Pedidos::where('mesa_id', $request->mesa)
+                    ->whereNotIn('estado', ['finalizado', 'cancelado'])
+                    ->firstOrFail();
+
+                    $pedido->para_mesa = 0;
+                    $pedido->para_llevar = 1;
+                    if($mesa->estado != 'pendiente' || $mesa->estado != 'espera_entrega' || $mesa->estado != 'espera'){
+                        $pedido->estado = 'espera_empacar';
+                    }
+
+                    $pedido->tipo_pedido = 'mixto';   
+                    if($request->observaciones){
+                        $pedido->observaciones = $request->observaciones;
+                    }
+
+                    $pedido->save();
+
+                    $pedidoProductos = PedidoProducto::where('pedido_id', $pedido->id)->get();
+                    foreach ($pedidoProductos as $pedidoProducto) {
+                        if($pedidoProducto->estado == 'pendiente'){
+                            $pedidoProducto->estado = $mesa->estado;
+                            $pedidoProducto->save();
+                        }else if($pedidoProducto->estado == 'espera'){
+                            $pedidoProducto->estado = 'finalizar';
+                            $pedidoProducto->save();
+                        }else if($pedidoProducto->estado == 'finalizado'){
+                            $pedidoProducto->estado = 'finalizado';
+                            $pedidoProducto->save();
+                        }else if($pedidoProducto->estado == 'espera_entrega'){
+                            $pedidoProducto->estado = 'espera_empacar';
+                            $pedidoProducto->save();
+                        }
+                    }
+
+                    //PONER PARA LLEVAR 
+                    broadcast(new ParaLlevarPedidoEvent($pedido));    
+                }
+            }
             if (!$pedido) {
                 return redirect()->back()->with('error', 'No hay un pedido activo para esta mesa.');
             }
         
             $pedido->prioridad = 'urgente';            
             $pedido->nombre_cliente = $request->nombre_cliente;
+            $pedido->observaciones = $request->observaciones;
+            $pedido->save();
             $total = $pedido->total;
         
             // Asegurar agregar correctamente productos con persona_id
@@ -109,7 +170,7 @@ class PedidosController extends Controller
             // Actualizar el pedido
             $pedidoConProductos = Pedidos::with(['productos.producto'])->findOrFail($pedido->id);
         
-            if (!$request->para_llevar) {
+            if (!$request->para_llevar && $request->mesa) {
                 $mesa = Mesa::find($request->mesa);
                 $mesa->update(['estado' => 'pendiente']);
                 broadcast(new AddPedidoEvent($pedidoConProductos, $mesa));
@@ -137,6 +198,7 @@ class PedidosController extends Controller
                 'total' => 0,
                 'estado' => 'pendiente',
                 'prioridad' => $prioridad,
+                'observaciones' => $request->observaciones,
                 'para_llevar' => $request->para_llevar ?? 0,
             ]);
             
@@ -222,6 +284,7 @@ class PedidosController extends Controller
     
         // Actualizar el total en el pedido
         $pedido->update(['total' => $total]);
+        $pedido->save();
     }
     
 
@@ -234,7 +297,12 @@ class PedidosController extends Controller
         $sucursalId = $user->sucursal_id;
 
         // Filtra el inventario por sucursal_id
-        $inventario = Inventario::where('sucursal_id', $sucursalId)->get();
+        $inventario = Inventario::where('sucursal_id', $sucursalId)->get()->map(function ($item) {
+            if($item->imagen !== 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAFAAAABQCAYAAACOEfKtAAAAAXNSR0IArs4c6QAAAohJREFUeF7t1dunAlEYBfBvIpGSrtJVL5H+//+i10Qv6Sq6kHroIh3fxz7mjHSqZZOsIWZq1jT7N2vvCXq93k24vS0QEPBtOwsSEPMjIOhHQAKiAmCeayABQQEwzgYSEBQA42wgAUEBMM4GEhAUAONsIAFBATDOBhIQFADjbCABQQEwzgYSEBQA42wgAUEBMM4GEhAUAONsIAFBATDOBhIQFADjbCABQQEwzgYSEBQA42wgAUEBMO69gZVKRcrlsgRBIMfjUfr9vt1ys9mUQqFg+/v9XobD4UtDuZdPp9PSarUkHo/L9XqV6XQqm83mpeu+erJXQB2QDnS73cpisZButyuHw8E+1WpV5vO5nM/nP+c8M4B8Pn83n0qlLK4PQ/9Xj90De+a675zjFVBvqNPpyG63M0C3r99nMhkZDAZ2z+12W06nk4zHYzvW1haLRZnNZnZcq9VktVrZNXTTB9NoNGS5XNoDcPulUun3vxRZmz+ZTKzhvjbvgOFptV6vDUmBooCuOW6gek42m7Wp7xocRlCger0usVjMIMMPSPfDLfU5jb0C6iDC7dEpfLlcbAo/aqCD0mZGYaMN1QbquqctTyaT39XAaAsciDbivzXQrWEKpuBuejvAXC5n3+n0dGtrIpH4vjUw/LbU9o1GIxv0o7ew/qbTV9+i99ZAt27q8qCbe7t/3VvY18L9Sdf1ugZ+0kB93QsBQVkCEhAUAONsIAFBATDOBhIQFADjbCABQQEwzgYSEBQA42wgAUEBMM4GEhAUAONsIAFBATDOBhIQFADjbCABQQEwzgYSEBQA42wgAUEBMM4GEhAUAONsIAFBATDOBhIQFADjbCABQQEwzgYSEBQA4z92vyNfXU0apAAAAABJRU5ErkJggg=='){
+                $item->imagen = Storage::url($item->imagen);
+            }
+            return $item;
+        });
         
         $ordenes = Pedidos::with(['productos.producto'])
             ->with('mesa')
@@ -651,7 +719,12 @@ class PedidosController extends Controller
 
             $user = Auth::user();
             $sucursalId = $user->sucursal_id;          
-            $dinerototal = $pedido->total - $pedido->descuento;
+            $dinerototal = 0;
+            if($pedido->descuento){
+                $dinerototal = $pedido->total - $pedido->descuento;
+            }else{
+                $dinerototal = $pedido->total;
+            }
             
             
             $corteCajaController = new CorteCajaController();
@@ -660,20 +733,76 @@ class PedidosController extends Controller
 
             $corteCaja = $corteCaja = CorteCaja::where('sucursal_id', $user->sucursal_id)
                 ->where('fecha', $fecha)
+                ->where('status', true)
                 ->first();
                 
-            if($corteCaja){
-                $corteCaja->dinero_total += $dinerototal;
-                $corteCaja->save();
-            }
 
-            $corteCajaController->crearLogCaja($sucursalId, $user->id, $dinerototal, 'venta');
             
-             
+                
+            if($corteCaja){
+                if($pedido->metodo_pago === 'cash'){
+                    $corteCaja->dinero_total += $dinerototal;
+                    $corteCaja->total_entradas += $dinerototal;
+                    $corteCaja->ventas_total += $dinerototal;
+                    $corteCaja->dinero_en_efectivo += $dinerototal;
+                    $corteCaja->save();
+                    $corteCajaController->crearLogCaja($sucursalId, $user->id, $dinerototal, 'venta', 'Primer registro');
+                }else if($pedido->metodo_pago === 'card'){
+                    $corteCaja->dinero_total += $dinerototal;
+                    $corteCaja->total_entradas += $dinerototal;
+                    $corteCaja->ventas_total += $dinerototal;
+                    $corteCaja->dinero_tarjeta += $dinerototal;
+                    $corteCaja->save();
+                    $corteCajaController->crearLogCaja($sucursalId, $user->id, $dinerototal, 'venta', 'Primer registro', 'tarjeta');
+                }else{
+                    $corteCaja->dinero_total += $dinerototal;
+                    $corteCaja->total_entradas += $dinerototal;
+                    $corteCaja->ventas_total += $dinerototal;
+                    $corteCaja->dinero_tarjeta += $dinerototal;
+                    $corteCaja->save();
+                    $corteCajaController->crearLogCaja($sucursalId, $user->id, $dinerototal, 'venta', 'Primer registro', 'transferencia');
+                }
+            }else{
+                //metodo de pago efectivo 
+                if($pedido->metodo_pago === 'cash'){
+                    CorteCaja::create([
+                        'sucursal_id' => $user->sucursal_id,
+                        'usuario_id' => $user->id,
+                        'fecha' => $fecha,
+                        'dinero_total' => $dinerototal,
+                        'total_entradas' => $dinerototal,
+                        'ventas_total' => $dinerototal,
+                        'dinero_en_efectivo' => $dinerototal
+                    ]);
+                    $corteCajaController->crearLogCaja($sucursalId, $user->id, $dinerototal, 'venta', 'Primer registro');
+                }else if($pedido->metodo_pago === 'card'){
+                    CorteCaja::create([
+                        'sucursal_id' => $user->sucursal_id,
+                        'usuario_id' => $user->id,
+                        'fecha' => $fecha,
+                        'dinero_total' => 0,
+                        'total_entradas' => $dinerototal,
+                        'ventas_total' => $dinerototal,
+                        'dinero_tarjeta' => $dinerototal
+                    ]);
+                    $corteCajaController->crearLogCaja($sucursalId, $user->id, $dinerototal, 'venta', 'Primer registro', 'tarjeta');
+                }else{
+                    CorteCaja::create([
+                        'sucursal_id' => $user->sucursal_id,
+                        'usuario_id' => $user->id,
+                        'fecha' => $fecha,
+                        'dinero_total' => 0,
+                        'total_entradas' => $dinerototal,
+                        'ventas_total' => $dinerototal,
+                        'dinero_tarjeta' => $dinerototal
+                    ]);
+                    $corteCajaController->crearLogCaja($sucursalId, $user->id, $dinerototal, 'venta', 'Primer registro', 'transferencia');
+                }
+            }
             return back()->with('success', 'Pedido entregado exitosamente.');
             
         } catch (\Exception $e) {
-            return redirect()->route('cocina')->with('error', 'Pedido no pudo ser completado');
+            return back()->with('error', 'Pedido no pudo ser completado');
         }
     }
 

@@ -8,25 +8,26 @@
         :key="order.id" 
         class="bg-gray-100 p-4 rounded-lg shadow-sm"
       >
-        <p class="text-gray-800 font-bold mb-2">Pedido ID: {{ order.id }}</p>
+        <p v-if="order.nombre_cliente" class="text-gray-800 text-xl font-bold mb-2">Cliente: {{ order.nombre_cliente }}</p>
+        <p v-else class="text-gray-800 font-bold mb-2 text-xl">Pedido ID: {{ order.id }}</p>
         <div class="flex justify-between items-center mb-2">
           <div class="flex flex-col gap-2">
             <button 
             @click="handleAdd(order.id)"
-              class="text-sm bg-blue-500  text-white px-2 size-fit py-2  rounded-lg hover:bg-blue-600 transition-colors"
+              class="text-xl bg-blue-500  text-white px-2 size-fit py-2  rounded-lg hover:bg-blue-600 transition-colors"
             >
               Agregar productos
             </button>
             <button 
               @click="handleSubstack(order.id)"
-              class="text-sm bg-blue-500 w-full text-white px-2 size-fit py-2  rounded-lg hover:bg-blue-600 transition-colors"
+              class="text-xl bg-blue-500 w-full text-white px-2 size-fit py-2  rounded-lg hover:bg-blue-600 transition-colors"
               >
               Quitar productos
             </button>
           </div>
           <button 
             @click="handleCancel(order.id)"
-            class="text-sm bg-red-500 text-white px-4 py-2 rounded-lg hover:bg-red-600 transition-colors"
+            class="text-xl bg-red-500 text-white px-4 py-2 rounded-lg hover:bg-red-600 transition-colors"
           >
             Cancelar
           </button>

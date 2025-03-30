@@ -215,35 +215,33 @@ const Toast = Swal.mixin({
     toast.onmouseleave = Swal.resumeTimer
   }
 })
+const removeTable = async (table) => {  
+  const result = await Swal.fire({
+    title: '¿Eliminar mesa?',
+    text: 'Esta acción no se puede deshacer.',
+    icon: 'warning',
+    showCancelButton: true,
+    confirmButtonText: 'Eliminar',
+    cancelButtonText: 'Cancelar'
+  });
 
-const removeTable = (table) => {
-  
-  const result = Swal.fire({
-      title: '¿Eliminar mesa?',
-      text: 'Esta acción no se puede deshacer.',
-      icon: 'warning',
-      showCancelButton: true,
-      confirmButtonText: 'Eliminar',
-      cancelButtonText: 'Cancelar'
-    });
+  if (result.isConfirmed) {
+    if (table.estado !== 'libre') {
+      Toast.fire({
+        icon: "error",
+        title: "No se puede eliminar una mesa ocupada"
+      });
+      return;
+    }
 
-    if (result.isConfirmed) {
-      if (table.estado !== 'libre') {
-    Toast.fire({
-      icon: "error",
-      title: "No se puede eliminar una mesa ocupada"
-    });
-    return;
-  }
-
-  try {
+    try {
       if (!table.esNueva) {
-        router.delete(`/mesas/${table.id}`);
+        await router.delete(`/mesas/${table.id}`); // Asegurar que la eliminación en el servidor sea asíncrona
       }
-      
+
       tables.value = tables.value.filter(t => t.id !== table.id);
       emit('update', tables.value);
-      
+
       Toast.fire({
         icon: "success",
         title: "Mesa eliminada con éxito"
@@ -255,8 +253,7 @@ const removeTable = (table) => {
         title: "Error al eliminar mesa"
       });
     }
-    }
-  
+  }
 };
 
 

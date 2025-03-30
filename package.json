@@ -23,6 +23,7 @@
     "dependencies": {
         "lucide-vue-next": "^0.454.0",
         "pinia": "^2.2.4",
-        "sweetalert2": "^11.14.1"
+        "sweetalert2": "^11.14.1",
+        "vue3-touch-events": "^5.0.13"
     }
 }

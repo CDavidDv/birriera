@@ -30,6 +30,8 @@ import OrderCard from './OrderCard.vue';
 const { props } = usePage();
 const ordenes = ref(props.ordenes);
 
+console.log(props.ordenes)
+
 const preprocessedOrders = computed(() =>
   ordenes.value.map(order => ({
       ...order,
@@ -46,7 +48,7 @@ function isOrderUrgent(createdAt) {
 function groupItemsByPerson(items) {
   return items.reduce((acc, item) => {
     // Filtrar solo los productos con estado "finalizado" o "espera_empacar"
-    if (item.estado === 'finalizado' || item.estado === 'espera_empacar') {
+    if (item.estado === 'finalizado' || item.estado === 'espera_empacar' || item.estado === 'espera_entrega') {
       const personId = item.persona_id;
       if (!acc[personId]) {
         acc[personId] = [];
@@ -59,10 +61,7 @@ function groupItemsByPerson(items) {
 
 function completeOrder(orderId) {
   const order = ordenes.value.find((order) => order.id === orderId);
-  if (!order.pagado && (order.tipo_pedido === 'para_llevar' || order.tipo_pedido === 'mixto')) {
-     showToast('error', 'No se ha pagado el pedido');
-      return;
-  }
+  
   router.post(
       '/terminar_pedido',
       { id: orderId },

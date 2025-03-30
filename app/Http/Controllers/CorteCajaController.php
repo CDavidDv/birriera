@@ -108,6 +108,7 @@ class CorteCajaController extends Controller
         // Obtener el corte
         $corte = CorteCaja::where('sucursal_id', $sucursalId)
             ->whereDate('created_at', Carbon::today())
+            ->where('status', true)
             ->first();
     
         // Obtener los logs de caja
@@ -225,7 +226,11 @@ class CorteCajaController extends Controller
                 return $this->guardarFinal($request->monto);
     
             case 'withdraw':
+                return $this->guardar($request);
+
             case 'deposit':
+                return $this->guardar($request);
+
             case 'addGastos':
                 return $this->guardar($request);
     
@@ -247,18 +252,34 @@ class CorteCajaController extends Controller
         $usuario = auth()->user();
         $fecha = Carbon::now()->format('Y-m-d');
     
-        if (CorteCaja::where('sucursal_id', $usuario->sucursal_id)->where('fecha', $fecha)->exists()) {
+        $corte = CorteCaja::where('sucursal_id', $usuario->sucursal_id)
+            ->where('fecha', $fecha)
+            ->where('status', true)
+            ->first();
+
+            
+        if ($corte && $corte->saldo_inicial) {
             return back()->with('error', 'Ya existe un corte de caja para esta fecha.');
         }
-    
-        CorteCaja::create([
-            'sucursal_id' => $usuario->sucursal_id,
-            'fecha' => $fecha,
-            'dinero_en_efectivo' => $dinero_inicio,
-            'saldo_inicial' => $dinero_inicio || 0,
-            'dinero_total' => $dinero_inicio,
-            'usuario_id' => $usuario->id,
-        ]);
+        
+        
+        if(!$corte){
+            CorteCaja::create([
+                'sucursal_id' => $usuario->sucursal_id,
+                'fecha' => $fecha,
+                'dinero_en_efectivo' => $dinero_inicio,
+                'dinero_total' => $dinero_inicio,
+                'total_entradas' => $dinero_inicio,
+                'saldo_inicial' => $dinero_inicio,
+                'dinero_total' => $dinero_inicio,
+                'usuario_id' => $usuario->id,
+            ]);
+        }else{
+            $corte->saldo_inicial = $dinero_inicio;
+            $corte->dinero_en_efectivo += $dinero_inicio;
+            $corte->dinero_total += $dinero_inicio;
+            $corte->save();
+        }
         $this->crearLogCaja($usuario->sucursal_id, $usuario->id, $dinero_inicio, 'corte-entrada');
         return redirect()->route('corte-caja')->with('success', 'Cantidad inicial guardada correctamente.');
     }
@@ -269,6 +290,7 @@ class CorteCajaController extends Controller
         $fecha = Carbon::now()->format('Y-m-d');
         $corteCaja = CorteCaja::where('sucursal_id', $usuario->sucursal_id)
                               ->where('fecha', $fecha)
+                              ->where('status', true)
                               ->first();
     
         if (!$corteCaja) {
@@ -358,9 +380,6 @@ class CorteCajaController extends Controller
         // Calcular el dinero después del movimiento
         $dineroDespues = $tipo === 'entrada' ? $dineroAntes + $cantidad : $dineroAntes - $cantidad;
 
-        if ($dineroDespues < 0) {
-            return back()->with('error', 'El monto en caja no puede ser negativo.');
-        }
 
         // Crear el log de caja
         $logCaja = LogsCaja::create([
@@ -382,24 +401,70 @@ class CorteCajaController extends Controller
     {
         $user = Auth::user();
         $sucursalId = $user->sucursal_id;
-        
+    
+        // Obtener las ventas
         $ventas = Pedidos::where('sucursal_id', $sucursalId)
             ->where('estado', 'finalizado')
             ->whereDate('created_at', Carbon::today())
-            ->orderBy('created_at', 'desc') 
+            ->orderBy('created_at', 'desc') // Ordenar por la fecha más reciente
             ->limit(20)
             ->get();
-        
-        $logscaja =  LogsCaja::where('sucursal_id', $sucursalId)
+    
+        // Obtener el corte
+        $corte = CorteCaja::where('sucursal_id', $sucursalId)
+            ->whereDate('created_at', Carbon::today())
+            ->where('status', true)
+            ->first();
+    
+        // Obtener los logs de caja
+        $logscaja = LogsCaja::where('sucursal_id', $sucursalId)
             ->whereDate('created_at', Carbon::today())
             ->whereNotIn('tipo', ['venta'])
             ->get();
-
-        
+    
+        // Ajustar las horas en los resultados
+        $ventas->transform(function ($venta) {
+            $venta->created_at = Carbon::parse($venta->created_at)->subHours(6); // Suma 6 horas
+            $venta->updated_at = Carbon::parse($venta->updated_at)->subHours(6); // Suma 6 horas
+            return $venta;
+        });
+    
+        $logscaja->transform(function ($log) {
+            $log->created_at = Carbon::parse($log->created_at)->subHours(6); // Suma 6 horas
+            $log->updated_at = Carbon::parse($log->updated_at)->subHours(6); // Suma 6 horas
+            return $log;
+        });
+    
+        if ($corte) {
+            $corte->created_at = Carbon::parse($corte->created_at)->subHours(6); // Suma 6 horas
+            $corte->updated_at = Carbon::parse($corte->updated_at)->subHours(6); // Suma 6 horas
+        }
+    
+        // Retornar los datos ajustados
         return response()->json([
             'ventas' => $ventas,
-            'logscaja' => $logscaja
+            'corte' => $corte,
+            'logscaja' => $logscaja 
         ]);
+    }
+
+    //cerrarCorte
+    public function cerrarCorte(Request $request)
+    {
+        $user = Auth::user();
+        $sucursalId = $user->sucursal_id;
+
+        // Obtener el corte
+        $corte = CorteCaja::findOrFail($request->corte_id);
+
+        if ($corte) {
+            $corte->status = false;
+            $corte->note = $request->nota;
+            $corte->save();
+            return back()->with('success', 'Corte cerrado correctamente.');
+        } else {
+            return back()->with('error', 'No se encontró un corte de caja para cerrar.');
+        }
     }
 
 }

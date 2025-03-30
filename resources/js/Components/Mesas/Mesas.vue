@@ -43,7 +43,7 @@
             >
               <component :is="getTableIcon(table.estado)" class="w-8 h-8 mx-auto mb-2" />
               
-              <span class="font-medium">{{ table?.nombre || `Mesa ${table.id}` }}</span>
+              <span class="font-medium text-2xl">{{ table?.nombre || `Mesa ${table.id}` }}</span>
               <span class="text-center flex justify-center items-center place-items-center text-lg font-bold text-gray-900 bg-gray-50 size-fit p-1 rounded-lg">{{ getStatusText(table.estado) }}</span>
             </button>
           </div>
@@ -99,99 +99,77 @@
             </div>
           </div>
           
-          <div class="bg-white rounded-lg shadow-md p-6">
+          <!--modal para ver las opciones-->
+          <div v-if="showTableOptions"  class="fixed inset-0 max-h-screen px-2 sm:px-0 z-50 bg-black bg-opacity-50 flex justify-center items-center">
+            
+            <div class="bg-white rounded-lg shadow-md p-6 sm:max-h-[80vh] max-h-[50vh]  overflow-y-auto">
 
-            <div v-if="selectedTable && selectedTable.nombre">
-              <h2 class="text-xl font-semibold mb-4">{{ `Acciones ${selectedTable.nombre}` }}</h2>
-            </div>
-            <div v-else>
-              <h2 class="text-xl font-semibold mb-4">Selecciona una mesa</h2>
-              <span class="text-gray-600 mb-4">Para mostrar las opciones</span>
-            </div>
-
-            <div class="space-y-2">
-              <button 
-                v-if="selectedTable && selectedTable.estado === 'libre'"
-                @click="startNewOrder"
-                :disabled="!selectedTable"
-                class="w-full py-2 px-4 bg-blue-500 text-white rounded-lg font-medium disabled:bg-gray-300 disabled:cursor-not-allowed hover:bg-blue-600 transition-colors"
-              >
-                Iniciar Nuevo Pedido
-              </button>
-              <button 
-                v-if="selectedTable && selectedTable.estado !== 'libre'"
-                @click="continueOrder"
-                class="w-full py-2 px-4 bg-green-500 text-white rounded-lg font-medium hover:bg-green-600 transition-colors"
-              >
-                Añadir productos
-              </button>
-              <button 
-                v-if="selectedTable && selectedTable.estado !== 'libre'"
-                @click="substracItem"
-                class="w-full py-2 px-4 bg-amber-500 text-white rounded-lg font-medium hover:bg-amber-600 transition-colors"
-              >
-                Ver/Quitar productos
-              </button>
-              <button 
-                  v-if="selectedTable && selectedTable.estado !== 'libre'"
-                  @click="paraLlevar"
-                  class="w-full py-2 px-4 bg-orange-500 text-white rounded-lg font-medium hover:bg-orange-600 transition-colors"
-                >
-                  Poner para llevar
+              <div v-if="selectedTable && selectedTable.nombre" class="flex justify-between  items-center">
+                <h2 class="text-xl font-semibold mb-4">{{ `Acciones ${selectedTable.nombre}` }}</h2>
+                <button @click="showTableOptions = false" class="mb-6">
+                  <XIcon />
                 </button>
-              <div v-if="options && selectedTable && selectedTable.estado !== 'libre'"
-              class="space-y-2">
-
-                <button 
-                  @click="openTableChangeModal"
-                  v-if="selectedTable && selectedTable.estado !== 'libre'"
-                  :disabled="!selectedTable || selectedTable.estado === 'libre'"
-                  class="w-full py-2 px-4 bg-blue-500 text-white rounded-lg font-medium disabled:bg-gray-300 hover:bg-blue-600 transition-colors"
-                >
-                  Cambiar a otra mesa
-                </button>
-              
-                <!--division-->
-                <div class="w-full h-4 flex items-center">
-                  <div class="w-full border">
-                  </div>
-                </div>
-
-                <button 
-                  v-if="selectedTable && selectedTable.estado !== 'libre'"
-                  @click="enviaraCaja"
-                  class="w-full py-2 px-4 bg-yellow-500 text-white rounded-lg font-medium hover:bg-yellow-600 transition-colors"
-                >
-                  Enviar a caja
-                </button>
-  
-                
               </div>
-
-              <div class="w-full h-8 flex items-center">
-                  <div class="w-full border">
+              <div class="space-y-6">
+                <button 
+                  v-if="selectedTable && selectedTable.estado === 'libre'"
+                  @click="startNewOrder"
+                  :disabled="!selectedTable"
+                  class="w-full py-5 px-20 bg-blue-500 text-white rounded-lg font-medium disabled:bg-gray-300 disabled:cursor-not-allowed hover:bg-blue-600 transition-colors"
+                >
+                  Iniciar Nuevo Pedido
+                </button>
+                <button 
+                  v-if="selectedTable && selectedTable.estado !== 'libre'"
+                  @click="continueOrder"
+                  class="w-full py-5 text-2xl px-4 bg-green-500 text-white rounded-lg font-medium hover:bg-green-600 transition-colors"
+                >
+                  Añadir productos
+                </button>
+                <button 
+                  v-if="selectedTable && selectedTable.estado !== 'libre'"
+                  @click="substracItem"
+                  class="w-full py-5 text-2xl px-4 bg-amber-400 text-white rounded-lg font-medium hover:bg-amber-500 transition-colors"
+                >
+                  Ver/Quitar productos
+                </button>
+                <button 
+                  v-if="selectedTable && selectedTable.estado !== 'libre'"
+                  @click="resumeTicket"
+                  class="w-full py-5 text-2xl px-4 bg-slate-400 text-white rounded-lg font-medium hover:bg-slate-500 transition-colors"
+                >
+                  Resumen del pedido
+                </button>
+                <div v-if="selectedTable && selectedTable.estado !== 'libre'" class="space-y-2">
+                  <button 
+                    @click="openTableChangeModal"
+                    :disabled="!selectedTable || selectedTable.estado === 'libre'"
+                    class="w-full py-5 text-2xl px-4 bg-blue-500 text-white rounded-lg font-medium disabled:bg-gray-300 hover:bg-blue-600 transition-colors"
+                  >
+                    Cambiar a otra mesa
+                  </button>
+                  
+                  <div class="w-full h-44 flex items-center" v-if="selectedTable && selectedTable.estado !== 'libre'">
+                    <div class="w-full border"></div>
                   </div>
+                  <button 
+                    @click="enviaraCaja"
+                    class="w-full py-5 text-2xl px-4 bg-yellow-500 text-white rounded-lg font-medium hover:bg-yellow-600 transition-colors"
+                  >
+                    Enviar a caja
+                  </button>
                 </div>
-                
-              <!--Cancelar pedido-->
-              <button
-                v-if="selectedTable && selectedTable.estado !== 'libre'"
-                @click="cancelOrdenMesa"
-                class="w-full py-2 px-4 bg-red-500 text-white rounded-lg font-medium hover:bg-red-600 transition-colors"
-              >
-                Cancelar pedido
-              </button>
-
-              <button
-                class="w-full py-2 px-4 bg-gray-400 text-white rounded-lg font-medium hover:bg-gray-600 transition-colors"
-                @click="toggleOptions"
-                v-if="selectedTable && selectedTable.estado !== 'libre'"
-              >  
-                <span v-if="!options">Más opciones</span>
-                <span v-else>Menos opciones</span>
-                
-              </button>
-                
+                <div class="w-full h-16 flex items-center" v-if="selectedTable && selectedTable.estado !== 'libre'">
+                  <div class="w-full border"></div>
+                </div>
+                <button
+                  v-if="selectedTable && selectedTable.estado !== 'libre'"
+                  @click="cancelOrdenMesa"
+                  class="w-full py-5 text-2xl px-4 bg-red-500 text-white rounded-lg font-medium hover:bg-red-600 transition-colors"
+                >
+                  Cancelar pedido
+                </button>
+              </div>
             </div>
           </div>
         </div>
@@ -202,6 +180,7 @@
         @add="agregarProductos"
         @subs="substracItemDeliver"
         @cancel="cancelOrden"
+        :ordenParaLlevar="ordenParaLlevar"
       />
     </div>
 
@@ -223,6 +202,14 @@
       :delivery="delivery"
       @close="closeOrderModal"
       @submit="submitOrder" 
+      :ordenParaLlevar="ordenParaLlevar"
+    />
+
+    <ModalResumeOrder
+      v-if="showResumeOrderModal"
+      :orden="filtrarOrden()"
+      :table="selectedTable"
+      @close="showResumeOrderModal = false"
     />
 
     <ModalQuitarProductos
@@ -250,7 +237,7 @@
 
 <script setup>
 import { ref, computed, onMounted } from 'vue'
-import { CircleIcon, UtensilsCrossedIcon, UsersIcon, ClipboardListIcon, Settings, X, Trash2, CircleDotIcon, CircleDot, CircleCheckBig, Dot, DotIcon, Timer } from 'lucide-vue-next'
+import { CircleIcon, UtensilsCrossedIcon, UsersIcon, ClipboardListIcon, Settings, X, Trash2, CircleDotIcon, CircleDot, CircleCheckBig, Dot, DotIcon, Timer, XIcon } from 'lucide-vue-next';
 import { router, usePage } from '@inertiajs/vue3';
 import ModalConfigMesas from './ModalConfigMesas.vue';
 import ModalPedido from './ModalPedido.vue';
@@ -271,15 +258,11 @@ const ordenesParaLlevar = ref(
   props.ordenesParaLlevar || []
 );
 
-const options = ref(false)
-
-const toggleOptions = () => {
-  options.value = !options.value
-}
-
+const showTableOptions = ref(false)
 const showOrderModal = ref(false)
 const showSubstracOrderModal = ref(false)
 const ordenes = ref(props.ordenes || [])
+const showResumeOrderModal = ref(false)
 
 const filtrarOrden = () => {
   return ordenes.value.find((orden) => orden?.mesa_id === selectedTable?.value?.id ) 
@@ -347,7 +330,7 @@ const changeTable = (newTable) => {
     selectedTable.value = newTable; // Seleccionar la nueva mesa
     closeTableChangeModal();
   } else {
-    console.error('No se puede cambiar a esta mesa');
+    //console.error('No se puede cambiar a esta mesa');
   }
 };
 
@@ -377,6 +360,7 @@ const getStatusText = (status) => {
 
 const selectTable = (table) => {
   selectedTable.value = table
+  showTableOptions.value = true
 }   
 
 const para_llevar = ref(false);
@@ -419,7 +403,14 @@ const substracItem = () => {
   } else {
     console.error('No hay mesa seleccionada')
   }
-}
+} 
+const resumeTicket = () => {
+  if (selectedTable.value) {
+    para_llevar.value = false
+    reConsumo.value = false
+    showResumeOrderModal.value = true
+  }
+} 
 
 const substracItemDeliver = (data) => {
   ordenParaLlevar.value = data
@@ -431,7 +422,7 @@ const substracItemDeliver = (data) => {
 
 
 
-const ordenParaLlevar = ref(false)
+const ordenParaLlevar = ref(null)
 
 const agregarProductos = (id) => {
   ordenParaLlevar.value = id
@@ -568,6 +559,7 @@ import Echo from 'laravel-echo';
 import Pusher from 'pusher-js';
 
 import axios from 'axios';
+import ModalResumeOrder from './ModalResumeOrder.vue';
 window.Pusher = Pusher;
 
 //pusher
@@ -648,8 +640,6 @@ window.Echo.channel(`pedidos_sucursal_${sucursalId}`)
               console.error('Error al obtener el pedido:', error);
           });
   })
-
-
   .listen('.substrack-pedido', (data) => {
 
       axios.get(`/getPedido/${data.id}`)
@@ -688,7 +678,6 @@ window.Echo.channel(`pedidos_sucursal_${sucursalId}`)
               console.error('Error al obtener el pedido:', error);
           });
   })
-
   .listen('.entregar-pedido', (data) => {
 
         // Realizar una solicitud para obtener los datos del pedido desde el servidor
@@ -735,8 +724,7 @@ window.Echo.channel(`pedidos_sucursal_${sucursalId}`)
               // Manejo de errores en caso de que la solicitud falle
               console.error('Error al obtener el pedido:', error);
           });
-    })
-
+  })
   .listen('.cancelar-pedido', (data) => {
     tables.value.forEach((mesa) => {
       if (mesa?.id === data?.pedido?.mesa_id) {
@@ -757,7 +745,6 @@ window.Echo.channel(`pedidos_sucursal_${sucursalId}`)
     }
     
   })
-  
   .listen('.cocinar-pedido', (data) => {
 
       axios.get(`/getPedido/${data.id}`)
@@ -940,8 +927,8 @@ window.Echo.channel(`pedidos_sucursal_${sucursalId}`)
           // Manejo de errores en caso de que la solicitud falle
           console.error('Error al obtener el pedido:', error);
       });
-    })
-    .listen('.finalizar-pedido', (data) => {
+  })
+  .listen('.finalizar-pedido', (data) => {
 
       // Realizar una solicitud para obtener los datos del pedido desde el servidor
       axios.get(`/getPedido/${data.id}`)
@@ -995,8 +982,8 @@ window.Echo.channel(`pedidos_sucursal_${sucursalId}`)
             // Manejo de errores en caso de que la solicitud falle
             console.error('Error al obtener el pedido:', error);
         });
-      })
-      .listen('.pagar-pedido', (data) => {
+  })
+  .listen('.pagar-pedido', (data) => {
    // Realizar una solicitud para obtener los datos del pedido desde el servidor
    axios.get(`/getPedido/${data.id}`)
       .then(response => {

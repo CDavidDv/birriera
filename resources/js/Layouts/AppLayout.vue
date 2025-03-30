@@ -264,7 +264,7 @@ const { props } = usePage()
                             Personal
                         </ResponsiveNavLink>
                     </div>
-                    <div class="pt-2 pb-3 space-y-1" v-if="$page.props.auth.user.roles[0].name === 'admin' || $page.props.auth.user.roles[0].name === 'caja' || $page.props.auth.user.roles[0].name === 'mesero'">
+                    <div class="pt-2 pb-3 space-y-1" v-if="$page.props.auth.user.roles[0].name === 'admin' || $page.props.auth.user.roles[0].name === 'caja' ">
                         <ResponsiveNavLink :href="route('corte-caja')" :active="route().current('corte-caja')">
                             Corte
                         </ResponsiveNavLink>
