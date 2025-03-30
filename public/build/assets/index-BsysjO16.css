@@ -1,0 +1,1 @@
+input[type=checkbox]:checked+span{background-color:#23ad2a;color:#fff}.touch-container{touch-action:pan-y;transition:transform .3s ease;position:relative;z-index:1}
