@@ -40,13 +40,16 @@
               @click="selectImage(image)"
             >
               <img :src="image?.url" :alt="image?.nombre" class="w-full h-full object-cover" />
-              <div class="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-20 transition-all flex items-center justify-center">
-                <div v-if="isImageSelected(image)" class="absolute top-2 right-2 bg-blue-500 text-white rounded-full p-1">
+              <div v-if="isImageSelected(image)" class="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-20 transition-all flex items-center justify-center">
+                <div class="absolute top-2 right-2 bg-blue-500 text-white rounded-full p-1" @click.stop="openImageModal(image)">
                   <ImageIcon />
+                </div>
+                <div class="absolute bottom-2 right-2 bg-red-500 text-white rounded-full p-1" @click.stop="deleteImage(image)">
+                  <Trash2Icon />
                 </div>
               </div>
             </div>
-            <div v-if="existingImages?.length === 0" class="w-full text-center py-8 text-gray-500">
+            <div v-if="!existingImages?.length" class="w-full text-center py-8 text-gray-500">
               No hay imágenes disponibles
             </div>
           </div>
@@ -139,11 +142,23 @@
       </div>
     </div>
   </div>
+
+  <!-- Image Modal -->
+  <div v-if="isImageModalOpen" class="fixed overflow-auto inset-0 bg-black bg-opacity-75 flex justify-center items-center z-50">
+    <div class="bg-white p-4 rounded-lg max-w-4xl max-h-[90vh]  overflow-auto">
+      <div class="w-full justify-end  flex">
+        <button @click="closeImageModal" class=" text-gray-600 block hover:text-gray-800">
+          <XIcon />
+        </button>
+      </div>
+      <img :src="selectedImage?.url" :alt="selectedImage?.nombre" class="w-full h-auto rounded-lg" />
+    </div>
+  </div>
 </template>
 
 <script setup>
-import { ref, computed } from 'vue';
-import { ImageIcon, XIcon } from 'lucide-vue-next';
+import { ref, computed, onMounted } from 'vue';
+import { ImageIcon, XIcon, Trash2Icon } from 'lucide-vue-next';
 import Swal from 'sweetalert2';
 import axios from 'axios';
 import { usePage } from '@inertiajs/vue3';
@@ -159,10 +174,10 @@ const props = defineProps({
 // Emits
 const emit = defineEmits(['close', 'select-image', 'upload-image']);
 
-const img = usePage()
+const img = usePage();
 
 // State
-const existingImages = ref(img.props.imagenes)
+const existingImages = ref(img.props.imagenes || []);
 const activeTab = ref('gallery');
 const selectedImage = ref(null);
 const fileInput = ref(null);
@@ -171,6 +186,8 @@ const newImageName = ref('');
 const isDragging = ref(false);
 const currentPage = ref(1);
 const itemsPerPage = 12;
+const isImageModalOpen = ref(false);
+const selectedFile = ref(null);
 
 // Computed
 const totalPages = computed(() => {
@@ -193,6 +210,15 @@ const selectImage = (image) => {
   selectedImage.value = image;
 };
 
+const openImageModal = (image) => {
+  selectedImage.value = image;
+  isImageModalOpen.value = true;
+};
+
+const closeImageModal = () => {
+  isImageModalOpen.value = false;
+};
+
 const isImageSelected = (image) => {
   return selectedImage.value?.url === image.url;
 };
@@ -205,7 +231,7 @@ const confirmSelection = () => {
 };
 
 const triggerFileInput = () => {
-  fileInput.value.click();
+  fileInput.value?.click();
 };
 
 const handleFileChange = (event) => {
@@ -223,7 +249,7 @@ const handleFileDrop = (event) => {
   } else {
     Toast.fire({
       icon: 'error',
-      title: 'Solo se permiten imágenes PNG o JPG'
+      title: 'Solo se permiten imágenes PNG, JPG o WEBP'
     });
   }
 };
@@ -233,12 +259,18 @@ const processFile = (file) => {
   const maxSizeMB = 4;
 
   if (!allowedTypes.includes(file.type)) {
-    alert('Solo se permiten imágenes PNG o JPG.');
+    Toast.fire({
+      icon: 'error',
+      title: 'Solo se permiten imágenes PNG, JPG o WEBP.'
+    });
     return;
   }
 
   if (file.size > maxSizeMB * 1024 * 1024) {
-    alert(`La imagen es demasiado grande. El tamaño máximo es ${maxSizeMB}MB.`);
+    Toast.fire({
+      icon: 'error',
+      title: `La imagen es demasiado grande. El tamaño máximo es ${maxSizeMB}MB.`
+    });
     return;
   }
 
@@ -246,7 +278,7 @@ const processFile = (file) => {
   reader.onload = (e) => {
     previewImage.value = e.target.result;
     newImageName.value = file.name.split('.')[0];
-    selectedFile.value = file; // GUARDAMOS EL ARCHIVO
+    selectedFile.value = file;
   };
   reader.readAsDataURL(file);
 };
@@ -258,8 +290,6 @@ const clearPreview = () => {
     fileInput.value.value = '';
   }
 };
-
-const selectedFile = ref(null); // NUEVO
 
 const Toast = Swal.mixin({
   toast: true,
@@ -280,7 +310,6 @@ const uploadImage = async () => {
     formData.append('name', newImageName.value);
 
     try {
-      // Mostrar indicador de carga
       Toast.fire({
         icon: 'info',
         title: 'Subiendo imagen...'
@@ -292,18 +321,12 @@ const uploadImage = async () => {
         },
       });
 
-      // Actualizar la lista de imágenes existentes
-      console.log('Imagenes antes', existingImages.value);
       const response = await axios.get('/images/all');
-      console.log('Respuesta de la API:', response.data.imagenes);
-      existingImages.value = response.data.imagenes;
-      console.log('Imagenes después', existingImages.value);
+      existingImages.value = response.data.imagenes || [];
 
-      // Limpiar vista previa y cambiar a la pestaña de galería
       clearPreview();
       activeTab.value = 'gallery';
 
-      // Mostrar mensaje de éxito
       Toast.fire({
         icon: 'success',
         title: 'Imagen subida exitosamente'
@@ -319,6 +342,37 @@ const uploadImage = async () => {
   }
 };
 
+const deleteImage = (image) => {
+  Swal.fire({
+    title: '¿Estás seguro?',
+    text: 'Esta acción eliminará la imagen seleccionada.',
+    icon: 'warning',
+    showCancelButton: true,
+    confirmButtonText: 'Sí, eliminar',
+    cancelButtonText: 'Cancelar'
+  }).then(async (result) => {
+    if (result.isConfirmed) {
+      try {
+        await axios.delete(`/api/images/${image.id}`);
+
+        existingImages.value = existingImages.value.filter(img => img.id !== image.id);
+        selectedImage.value = null;
+
+        Toast.fire({
+          icon: 'success',
+          title: 'Imagen eliminada exitosamente'
+        });
+      } catch (error) {
+        console.error('Error al eliminar la imagen:', error);
+        Toast.fire({
+          icon: 'error',
+          title: 'Error al eliminar la imagen'
+        });
+      }
+    }
+  });
+};
+
 const resetState = () => {
   activeTab.value = 'gallery';
   selectedImage.value = null;
@@ -326,4 +380,13 @@ const resetState = () => {
   newImageName.value = '';
   isDragging.value = false;
 };
+
+onMounted(() => {
+  if (!existingImages.value) {
+    existingImages.value = [];
+  }
+});
+const selectedImageIndex = computed(() => {
+  return existingImages.value.findIndex(img => img.id === selectedImage.value?.id);
+});
 </script>

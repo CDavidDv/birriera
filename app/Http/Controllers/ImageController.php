@@ -67,4 +67,29 @@ class ImageController extends Controller
                 'imagenes' => $imagenes
             ]);
     }
+
+    //delete
+    public function destroy($id)
+    {
+            // Buscar la imagen en la base de datos
+        $imagen = Imagenes::find($id);
+
+        if (!$imagen) {
+            return response()->json(['error' => 'Imagen no encontrada'], 404);
+        }
+
+        // Eliminar el archivo del almacenamiento
+        if (Storage::exists('public/' . $imagen->ruta)) {
+            try {
+                Storage::delete('public/' . $imagen->ruta);
+            } catch (\Exception $e) {
+                return response()->json(['error' => 'No se pudo eliminar el archivo: ' . $e->getMessage()], 500);
+            }
+        }
+
+        // Eliminar el registro de la base de datos
+        $imagen->delete();
+
+        return response()->json(['message' => 'Imagen eliminada exitosamente']);
+    }
 }

@@ -9,7 +9,7 @@ class Inventario extends Model
 {
     use HasFactory;
 
-    protected $table = 'inventario';
+    protected $table = 'inventarios';
     protected $fillable = ['sucursal_id', 'nombre', 'tipo', 'cantidad', 'precio', 'imagen'];
 
     public function sucursal()

@@ -57,9 +57,9 @@ Route::middleware(['auth:sanctum', config('jetstream.auth_session'), 'verified',
     Route::delete('/inventario/{id}', [InventarioController::class, 'destroy'])->name('inventario.destroy');
     Route::post('/images/upload', [ImageController::class, 'upload']);
     Route::post('/api/images', [ImageController::class, 'upload']);
-
+    Route::delete('/api/images/{id}', [ImageController::class, 'destroy']);
+    
     Route::get('/images/all', [ImageController::class, 'getImages']);
-
 
     Route::get('/cocina', [CocinaController::class, 'index'])->name("cocina");
     Route::post('/checkInOut', [CheckInCheckOutController::class, 'checkInOut'])->name('checkInOut');
