@@ -377,7 +377,7 @@ window.Echo.channel(`pedidos_sucursal_${sucursalId}`)
         console.log(pedido);
 
         const ordenExistente = ordenes.value.find((orden) => orden?.id === pedido.id);
-        printTicket(pedido.id)
+        
         if (ordenExistente) {
           // Si ya existe en pedidos en mesa, actualizarlo
           Object.assign(ordenExistente, pedido);
