@@ -88,6 +88,14 @@
           <span class="">${{ total }}</span>
         </div>
 
+        <!-- Botón para imprimir el ticket antes de pagar -->
+        <button
+          class="w-full px-3 py-2 bg-blue-500 hover:bg-blue-400 text-white rounded-xl mb-4"
+          @click="printCurrentTicket"
+        >
+          Imprimir Ticket
+        </button>
+
         <div class="space-y-4">
           <h3 class="font-medium">Método de Pago</h3>
           <div class="flex space-x-4">
@@ -170,7 +178,6 @@
         <p>No hay tickets recientes.</p>
       </div>
     </div>
-
   </div>
 </template>
 
@@ -191,7 +198,7 @@ const currentOrder = computed(() => {
 });
 
 const paymentMethods = [
-  { id: 'transfer', name: 'Transferencia', icon: BanknoteIcon },  
+  { id: 'transfer', name: 'Transferencia', icon: BanknoteIcon },
   { id: 'card', name: 'Tarjeta', icon: CreditCardIcon },
   { id: 'cash', name: 'Efectivo', icon: BanknoteIcon },
 ];
@@ -261,7 +268,7 @@ const procesarPago = () => {
   }
 
   loading.value = true;
-  
+
   router.post('/terminar_pedido', {
     id: selectedOrderId.value,
     total: total.value,
@@ -292,7 +299,7 @@ const procesarPago = () => {
     preserveState: false
 
   });
-    
+
 };
 const Toast = Swal.mixin({
     toast: true,
@@ -309,7 +316,6 @@ const Toast = Swal.mixin({
 function showToast(type, message) {
     Toast.fire({ icon: type, title: message });
 }
-
 
 import Echo from 'laravel-echo';
 
@@ -394,13 +400,62 @@ window.Echo.channel(`pedidos_sucursal_${sucursalId}`)
       });
   })
 
+const printCurrentTicket = () => {
+  if (!currentOrder.value) {
+    showToast('error', 'No hay orden seleccionada para imprimir.');
+    return;
+  }
 
-  const printTicket = (id) => {
+  const totalN = (currentOrder.value.productos.reduce((sum, product) => {
+    const cantidad = parseFloat(product.cantidad) || 0; // Asegura que cantidad sea un número
+    const precio = parseFloat(product.producto.precio) || 0; // Asegura que precio sea un número
+      return sum + cantidad * precio;
+  }, 0)
+  - (parseFloat(discount.value) || 0) // Asegura que descuento sea un número
+  + (parseFloat(tipAmount.value) || 0)); // Asegura que propina sea un número
 
-    console.log("El id de ticket")
-    console.log("El id de ticket",id)
+  fetch('https://print.test/print-ticket', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({
+      order_id: currentOrder.value.id,
+      mesa: currentOrder.value.mesa ? currentOrder.value?.mesa?.nombre : 'Para llevar', // Si tiene mesa, envíala, si no, 'Para llevar'
+      nombre_cliente: currentOrder.value?.nombre_cliente || 'Sin nombre', // Nombre del cliente o 'Sin nombre' si no hay
+      productos: currentOrder.value.productos.map(product => ({
+        nombre: product.producto.nombre,
+        cantidad: product.cantidad,
+        precio: product.producto.precio,
+        total: (product.cantidad * parseFloat(product.producto.precio)), // Total por producto
+      })),
+      total: totalN,
+      descuento: discount.value || 0,
+      propina: tipAmount.value || 0,
+      fecha: currentOrder.value.created_at, // Fecha del pedido
+      // Puedes agregar más campos según sea necesario
+      tipo: currentOrder.value.para_mesa ? 'Local' : 'Para llevar',
+    }),
+  })
+    .then((response) => response.json())
+    .then((data) => {
+      if (data.success) {
+        showToast('success', 'Ticket impreso correctamente');
+      } else {
+        showToast('error', data.message || 'Error al imprimir el ticket');
+      }
+    })
+    .catch((error) => {
+      console.error('Error en la impresión del ticket:', error);
+      showToast('error', 'Error al imprimir el ticket');
+    });
+};
+
+const printTicket = (id) => {
+  console.log("El id de ticket")
+  console.log("El id de ticket",id)
   const order = ordenes.value.find(order => order.id === id) || props.ordenesRecientes.find(orden => orden.id === id); // Encuentra el pedido por su ID
-  
+
   if (!order) {
     showToast('error', 'Pedido no encontrado');
     return;
@@ -409,10 +464,9 @@ window.Echo.channel(`pedidos_sucursal_${sucursalId}`)
     const cantidad = parseFloat(product.cantidad) || 0; // Asegura que cantidad sea un número
     const precio = parseFloat(product.producto.precio) || 0; // Asegura que precio sea un número
       return sum + cantidad * precio;
-  }, 0) 
+  }, 0)
   - (parseFloat(order.descuento) || 0) // Asegura que descuento sea un número
   + (parseFloat(order.propina) || 0)); // Asegura que propina sea un número
-
 
   fetch('https://print.test/print-ticket', {
     method: 'POST',
@@ -422,18 +476,18 @@ window.Echo.channel(`pedidos_sucursal_${sucursalId}`)
     body: JSON.stringify({
       order_id: order.id,
       mesa: order.mesa ? order?.mesa?.nombre : 'Para llevar', // Si tiene mesa, envíala, si no, 'Para llevar'
-      nombre_cliente: order?.nombre_cliente || 'Sin nombre', // Nombre del cliente o 'Sin nombre' si no hay
+      nombre_cliente: order?.nombre_cliente || 'Cliente', // Nombre del cliente o 'Sin nombre' si no hay
       productos: order.productos.map(product => ({
         nombre: product.producto.nombre,
         cantidad: product.cantidad,
         precio: product.producto.precio,
         total: (product.cantidad * parseFloat(product.producto.precio)), // Total por producto
       })),
-      total: order.total,
+      total: order.total || 0,
       descuento: order.descuento || 0,
       propina: order.propina || 0,
       fecha: order.created_at, // Fecha del pedido
-      // Puedes agregar más campos según sea necesario 
+      // Puedes agregar más campos según sea necesario
       tipo: order.para_mesa ? 'Local' : 'Para llevar',
     }),
   })
@@ -452,4 +506,3 @@ window.Echo.channel(`pedidos_sucursal_${sucursalId}`)
 };
 
 </script>
-

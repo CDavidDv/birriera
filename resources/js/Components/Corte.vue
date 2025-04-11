@@ -268,7 +268,8 @@ const fetchFilteredData = () => {
       registrosCaja.value = response.data.logscaja;
       corte.value = response.data.corte;
       dineroDisponible.value = response?.data?.corte?.dinero_total || 0;
-      
+      cashPayments.value = response?.data?.corte?.dinero_en_efectivo || 0;
+      cardPayments.value = response?.data?.corte?.dinero_tarjeta || 0;
       showToast("success", "Filtro actualizado correctamente");
     })
     .catch((error) => {
@@ -352,6 +353,8 @@ const saveModal = (amount, motivo) => {
           finalCash.value = e.props?.corte?.saldo_final || 0
           existentFinalCash.value = e.props?.corte?.saldo_final ? 0 : 1
           dineroDisponible.value = e.props?.corte?.dinero_total || 0
+
+          
           showToast("success", "Gasto guardado correctamente")
         }
         //obtener Logs y ventas
