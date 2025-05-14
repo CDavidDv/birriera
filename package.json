@@ -21,9 +21,12 @@
         "vue": "^3.2.31"
     },
     "dependencies": {
+        "jspdf": "^3.0.1",
+        "jspdf-autotable": "^5.0.2",
         "lucide-vue-next": "^0.454.0",
         "pinia": "^2.2.4",
         "sweetalert2": "^11.14.1",
-        "vue3-touch-events": "^5.0.13"
+        "vue3-touch-events": "^5.0.13",
+        "xlsx": "^0.18.5"
     }
 }

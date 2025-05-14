@@ -239,6 +239,7 @@
         emit("submit", payload);
         isSubmitting.value = false;
         emit("close");
+        emit("close");
       },
       onError: (e) => {
         console.log(e);
@@ -253,6 +254,7 @@
         isSubmitting.value = false;
       },
     });
+    emit("close");
   }
   
   let startX = 0;

@@ -39,10 +39,10 @@ class DashboardController extends Controller
     {
         // Obtén el usuario autenticado
         $user = Auth::user();
-
-        if ($user->hasRole('cocina')) return redirect()->route('cocina');
-        if ($user->hasRole('caja')) return redirect()->route('corte-caja');
-        if ($user->hasRole('empacador')) return redirect()->route('empacar');
+        
+        if ($user->role === 'cocina') return redirect()->route('cocina');
+        if ($user->role === 'caja') return redirect()->route('corte-caja');
+        if ($user->role === 'empacador') return redirect()->route('empacar');
 
         // Asume que el usuario tiene una sucursal_id
         $sucursalId = $user->sucursal_id;

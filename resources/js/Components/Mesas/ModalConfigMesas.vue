@@ -14,9 +14,9 @@
       </div>
 
       <!-- Table List -->
-      <div class="space-y-4 mb-6">
+      <div class="space-y-4 mb-6" v-if="tables.length" >
         <div 
-          v-if="tables.length" 
+          
           v-for="(table, index) in tables" 
           :key="table.id" 
           class="flex items-center gap-4 p-4 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors"
@@ -69,9 +69,9 @@
           
         </div>
         
-        <div v-else class="text-center py-8 text-gray-500">
-          No hay mesas configuradas. Añade una nueva mesa para comenzar.
-        </div>
+      </div>
+      <div v-else class="text-center py-8 text-gray-500">
+        No hay mesas configuradas. Añade una nueva mesa para comenzar.
       </div>
       
 

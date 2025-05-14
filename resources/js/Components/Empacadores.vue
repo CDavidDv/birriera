@@ -2,7 +2,7 @@
   <div class="flex items-center justify-center p-4 w-full">
       <div class="rounded-xl max-h-[90vh] w-full max-w-7xl  overflow-auto">
           <div class="p-6 w-full">
-                <div v-if="ordenes.length === 0" class="flex justify-center  flex-col items-center ">
+                <div v-if="preprocessedOrders.length === 0" class="flex justify-center  flex-col items-center ">
                     <ClipboardListIcon class="w-16 h-16 text-gray-400 mb-4" />
                     <h3 class="text-lg font-medium text-gray-900 mb-2">No hay pedidos pendientes</h3>
                     <p class="text-gray-500">Los pedidos para empacar aparecerán aquí</p>
@@ -30,14 +30,17 @@ import OrderCard from './OrderCard.vue';
 const { props } = usePage();
 const ordenes = ref(props.ordenes);
 
-console.log(props.ordenes)
+console.log(props.ordenesPendientesEntrega)
+console.log(props.ordenesPendientesParaLlevar)
 
 const preprocessedOrders = computed(() =>
-  ordenes.value.map(order => ({
+  ordenes.value
+    .filter(order => order.productos && order.productos.length > 0 && order.productos.some(producto => producto.estado !== 'entregado'))
+    .map(order => ({
       ...order,
       isUrgent: isOrderUrgent(order.created_at),
       groupedItems: groupItemsByPerson(order.productos),
-  }))
+    }))
 );
 
 function isOrderUrgent(createdAt) {
@@ -48,7 +51,7 @@ function isOrderUrgent(createdAt) {
 function groupItemsByPerson(items) {
   return items.reduce((acc, item) => {
     // Filtrar solo los productos con estado "finalizado" o "espera_empacar"
-    if (item.estado === 'finalizado' || item.estado === 'espera_empacar' || item.estado === 'espera_entrega') {
+    if (item.estado === 'finalizado' || item.estado === 'espera_empacar' || item.estado === 'espera_entrega' && item.tipo_servicio === 'para_llevar') {
       const personId = item.persona_id;
       if (!acc[personId]) {
         acc[personId] = [];
@@ -63,7 +66,7 @@ function completeOrder(orderId) {
   const order = ordenes.value.find((order) => order.id === orderId);
   
   router.post(
-      '/terminar_pedido',
+      '/completar_pedido',
       { id: orderId },
       {
           preserveScroll: true,
@@ -113,15 +116,10 @@ window.Echo.leaveChannel(`pedidos_sucursal_${sucursalId}`);
 window.Echo.channel(`pedidos_sucursal_${sucursalId}`)
     .listen('.cocinar-pedido-delivery', (data) => {
         console.log('Evento recibido:', data);
-
-        // Obtener el pedido desde el servidor
         axios.get(`/getPedido/${data.id}`)
         .then(response => {
             const pedido = response.data;
-
             console.log('Pedido recibido:', pedido);
-
-            // Agregar el pedido si no existe en las órdenes
             const ordenExistente = ordenes.value.find((orden) => orden?.id === pedido.id);
             
             if (!ordenExistente) {
@@ -132,94 +130,54 @@ window.Echo.channel(`pedidos_sucursal_${sucursalId}`)
         .catch(error => {
             console.error('Error al obtener el pedido:', error);
         });
-    
     })
     .listen('.empacar-pedido', (data) => {
-    console.log('Procesar evento entregar-pedido:', data);
-
-    // Realizar una solicitud para obtener los datos del pedido desde el servidor
-    axios.get(`/getPedido/${data.id}`)
+        console.log('Procesar evento empacar-pedido:', data);
+        axios.get(`/getPedido/${data.id}`)
         .then(response => {
             const pedido = response.data;
-            console.log('Pedido recibido :', pedido);
-
+            console.log('Pedido recibido:', pedido);
             const ordenExistente = ordenes.value.find((orden) => orden?.id === pedido.id);
             
             if (!ordenExistente) {
                 ordenes.value.push(pedido);
-                showToast('success', 'Nuevo pedido recibido');
+                showToast('success', 'Nuevo pedido para empacar');
             }
         })
         .catch(error => {
-            // Manejo de errores en caso de que la solicitud falle
             console.error('Error al obtener el pedido:', error);
         });
     })
-    .listen('.para-llevar-pedido', (data) => { 
-    axios.get(`/getPedido/${data.id}`)
+    .listen('.entregar-pedido', (data) => {
+        console.log('Procesar evento entregar-pedido:', data);
+        axios.get(`/getPedido/${data.id}`)
         .then(response => {
             const pedido = response.data;
-
-            if(pedido.estado === 'pendiente') return
-
-            console.log('Pedido recibido PARA LLEVAR PEDIDO:', pedido);
-
-            // Buscar el índice del pedido en la lista
+            console.log('Pedido recibido:', pedido);
             const index = ordenes.value.findIndex((orden) => orden?.id === pedido.id);
-
+            
             if (index !== -1) {
-                // Eliminar el pedido encontrado
                 ordenes.value.splice(index, 1);
                 showToast('success', 'Pedido entregado correctamente');
-            } else {
-                //agregar
-                ordenes.value.push(pedido);
             }
         })
         .catch(error => {
-            // Manejo de errores en caso de que la solicitud falle
             console.error('Error al obtener el pedido:', error);
         });
     })
     .listen('.cancelar-pedido', (data) => {
-      const order = data.pedido
-      const index = ordenes.value.findIndex((o) => o.id === order.id);
-      if (index !== -1) {
-        ordenes.value.splice(index, 1);
-      }
-      showToast('info', 'Pedido cancelado')
-    })
-    .listen('.pagar-pedido', (data) => {
-        axios.get(`/getPedido/${data.id}`)
-        .then(response => {
-            const pedido = response.data;
-
-            const ordenExistente = ordenes.value.find((orden) => orden?.id === pedido.id);
-
-           
-            if (ordenExistente) {
-                // Si ya existe en pedidos en mesa, actualizarlo
-                Object.assign(ordenExistente, pedido);
-                showToast('success', 'Pedido en mesa actualizado');
-            } else {
-                // Si no existe, agregarlo a pedidos en mesa
-                ordenes.value.push(pedido);
-                showToast('success', 'Nuevo pedido en mesa añadido');
-            }
-           
-        })
-        .catch(error => {
-            // Manejo de errores en caso de que la solicitud falle
-            console.error('Error al obtener el pedido:', error);
-        });
-      
+        const order = data.pedido;
+        const index = ordenes.value.findIndex((o) => o.id === order.id);
+        if (index !== -1) {
+            ordenes.value.splice(index, 1);
+        }
+        showToast('info', 'Pedido cancelado');
     })
     .listen('.terminar-pedido', (data) => {
-      console.log(data)
-      const index = ordenes.value.findIndex((o) => o.id === data.id);
-      if (index !== -1) {
-        ordenes.value.splice(index, 1);
-      }
-      showToast('info', 'Pedido entregado')
-    })
+        const index = ordenes.value.findIndex((o) => o.id === data.id);
+        if (index !== -1) {
+            ordenes.value.splice(index, 1);
+        }
+        showToast('info', 'Pedido terminado');
+    });
 </script>

@@ -113,8 +113,8 @@
 
 
               <!-- Selección de Persona -->
-              <div class="mb-4 flex justify-between flex-col md:flex-row">
-                <div class="flex items-center space-x-3 border px-2 rounded-lg"
+              <div  class="mb-4 flex justify-between flex-col md:flex-row">
+                <div v-if="!delivery" class="flex items-center space-x-3 border px-2 rounded-lg"
                   @click="check_para_llevar = !check_para_llevar">
                   <input type="checkbox" class="size-5 rounded-lg" v-model="check_para_llevar">
                   <label class="text-lg font-semibold text-gray-400">Para llevar</label>
@@ -139,7 +139,7 @@
 
                 <div v-for="item in person.cartItems" :key="item.id" class="">
                   <div class="flex flex-row">
-                    <img :src="item.imagen" :alt="item.nombre" class="size-8 rounded-lg object-cover" />
+                    <img :src="item.imagen" :alt="item.nombre" class="size-24 mr-4 rounded-lg object-cover" />
                     <div class="flex w-full justify-between">
                       <div class="flex flex-col">
                         <h3 class="font-medium">{{ item.nombre }}</h3>
@@ -164,7 +164,7 @@
                     
                   </div>
                   <!-- Lista de opciones de personalización -->
-                  <div class="flex  flex-row gap-2 over overflow-auto">
+                  <div class="flex  flex-row gap-2 over overflow-auto" v-if="item.tipo === 'comida'">
                         <div v-for="option in personalizaciones" :key="option" class="capitalize ">
                           <label class="flex items-center gap-1 p-1 rounded-lg border cursor-pointer hover:bg-gray-100">
                             <input type="checkbox" :checked="item.personalizacion.includes(option)"
@@ -196,9 +196,9 @@
 
             </div>
             <div class="mt-32">
-              <label class="block text-gray-700 font-medium mb-2" for="observaciones">Observaciones:</label>
+              <label class="block text-gray-700 font-medium mb-2" for="observaciones" >Observaciones:</label>
               <input type="text" name="observaciones" id="observaciones" v-model="orden.observaciones"
-                class="w-full p-2 border rounded-md">
+                class="w-full p-2 border rounded-md" placeholder="Observaciones">
             </div>
           </div>
         </div>

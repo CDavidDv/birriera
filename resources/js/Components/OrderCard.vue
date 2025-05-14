@@ -1,5 +1,5 @@
 <template>
-    <div :class="cardStyles">
+    <div :class="cardStyles" v-if="order.groupedItems && Object.keys(order.groupedItems).length > 0">
         <!-- Header -->
         <div class="px-2 py-3 border-b">
             <div class="flex justify-between items-center">
@@ -22,9 +22,7 @@
         </div>
 
         <!-- Grouped Items -->
-        <div class="divide-y">
-            
-            
+        <div class="divide-y" >
             <div
                 v-for="(personItems, personId) in order.groupedItems"
                 :key="personId"
@@ -51,6 +49,12 @@
                             <span class="font-medium text-gray-900 text-2xl">{{ item.cantidad }}x</span>
                             <div class="flex flex-col">
                                 <span class="text-gray-900 text-xl">{{ item.producto?.nombre }}</span>
+                                <span v-if="item.observaciones" class="text-lg text-gray-500">{{ item.observaciones }}</span>
+                                <span >{{ item.estado }}</span>
+                                <span v-if="item?.tipo_servicio" :class="{
+                                    'text-lg text-gray-500 bg-green-200 px-2 rounded-xl': item?.tipo_servicio === 'para_comer',
+                                    'text-lg text-gray-500 bg-orange-200 px-2 rounded-xl': item?.tipo_servicio === 'para_llevar'
+                                    }">{{ item?.tipo_servicio === 'para_llevar' ? 'Para llevar' : 'Para comer' }}</span>
                                 <span v-if="item.producto?.detalle" class="text-lg text-gray-500">
                                     {{ item.producto?.detalle }}
                                     
@@ -97,12 +101,14 @@
             </button>
         </div>
     </div>
+
+   
 </template>
 
 <script setup>
-import { ClockIcon, UserIcon, MapPinIcon } from 'lucide-vue-next';
+import { ClockIcon, UserIcon, MapPinIcon, ClipboardListIcon } from 'lucide-vue-next';
 
-defineProps({
+const props = defineProps({
     order: {
         type: Object,
         required: true,
@@ -139,4 +145,6 @@ const filterItems = (items, empacadores) => {
 
     return items.filter(item => (item.estado === 'espera_entrega' || item.estado === 'espera_empacar'));
 };
+
+console.log(props.order.groupedItems)
 </script>

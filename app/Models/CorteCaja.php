@@ -28,6 +28,10 @@ class CorteCaja extends Model
         'ventas_total',
         'dinero_en_efectivo',
         'dinero_tarjeta',
+        'otros_ingresos',
+        'venta_real',
+        'efectivo_entregado',
+        'saldo_siguiente_corte'
     ];
 
     // Relación con la tabla Sucursal

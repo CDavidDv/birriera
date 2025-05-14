@@ -35,19 +35,23 @@
                         </div>
                         <div class="flex items-center bg-white justify-around flex-col">
                           <span class="text-xl">x{{ item.quantity }}</span>
+                          <div>
+                            <!--si es entregado en verde y si no en rojo-->
+                            <span class="p-1 px-2 rounded-lg my-1 flex capitalize text-lg transition-all" :class="item.estado.includes('entregado') ? 'bg-green-500 text-white' : 'bg-red-500 text-white'">{{ item.estado.includes('entregado') ? 'Entregado' : 'Pendiente' }}</span>
+                            <!--si es para llevar, mostrar para llevar en naranja y si no verde-->
+                            <span class="p-1 px-2 rounded-lg my-1 flex capitalize text-lg transition-all" :class="item.tipo_servicio === 'para_llevar' ? 'bg-orange-400 text-white' : 'bg-green-500 text-white'">{{ item.tipo_servicio === 'para_llevar' ? 'Para llevar' : 'En mesa' }}</span>
+                          </div>
                         </div>
                       </div>
-                      <div class="flex  gap-2 justify-center ">
-                        <div v-if="item.personalizacion" v-for="personalizar in item.personalizacion.split(', ')" >
+                      
+                      <div class="flex  gap-2 justify-center " v-if="item.personalizacion" >
+                        <div v-for="personalizar in item.personalizacion.split(', ')" :key="personalizar">
                           <span class="p-1 px-2 rounded-lg my-1 flex capitalize text-lg transition-all" 
                                 :class="personalizar.includes('con todo') 
                                       ? 'bg-blue-500 text-white' 
                                       : 'bg-orange-400 text-white'">
                             {{ personalizar }}
                           </span>
-                        </div>
-                        <div>
-                          <span class="p-1 px-2 rounded-lg my-1 flex capitalize text-lg transition-all bg-slate-500 text-white">{{ item.estado.includes('espera') ? 'Entregado' : item.estado}}</span>
                         </div>
                       </div>
                     </div>
@@ -102,6 +106,7 @@
         ...item.producto,
         quantity: item.cantidad,
         stock: item.cantidad,
+        tipo_servicio: item.tipo_servicio,  
         precio: parseFloat(item.producto.precio), // Asegura el formato numérico
         personalizacion: item.personalizacion ? item.personalizacion : null,
         estado: item.estado ? item.estado : null

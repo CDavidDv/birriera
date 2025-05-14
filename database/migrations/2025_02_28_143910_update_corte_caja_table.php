@@ -15,7 +15,7 @@ class UpdateCorteCajaTable extends Migration
             // Agregar nuevos campos
             $table->datetime('opening_time')->nullable()->after('dinero_tarjeta');
             $table->datetime('closing_time')->nullable()->after('opening_time');;
-            $table->text('note', 10, 2)->nullable()->after('closing_time');
+            $table->text('note')->nullable()->after('closing_time');
             $table->boolean('status')->default(true)->after('note');
             $table->decimal('balance', 10, 2)->default(0)->after('status');
             $table->decimal('difference', 10, 2)->default(0)->after('balance');

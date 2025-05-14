@@ -47,6 +47,8 @@ Route::middleware(['auth:sanctum', config('jetstream.auth_session'), 'verified',
     Route::post('/enviaraCaja', [PedidosController::class, 'enviaraCaja'])->name("sendCaja");
     Route::post('/enviaraEntregar', [PedidosController::class, 'enviaraEntregar'])->name("enviaraEntregar");
     Route::post('/terminar_pedido', [PedidosController::class, 'terminar_pedido'])->name("terminar_pedido");
+    Route::post('/completar_pedido', [PedidosController::class, 'completar_pedido'])->name("completar_pedido");
+    Route::post('/pagar_pedido', [PedidosController::class, 'pagar_pedido'])->name("pagar_pedido");
 
     Route::get('/Entregar', [CorteCajaController::class, 'entregar'])->name("Entregar");
     Route::post('/Entregar', [PedidosController::class, 'completarPedido']);

@@ -51,7 +51,9 @@ function groupItemsByPerson(items) {
         if (!acc[personId]) {
             acc[personId] = [];
         }
-        acc[personId].push(item);
+        if (item.tipo_servicio !== 'para_llevar') {
+            acc[personId].push(item);
+        }
         return acc;
     }, {});
 }

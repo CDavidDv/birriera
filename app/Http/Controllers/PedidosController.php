@@ -40,7 +40,6 @@ class PedidosController extends Controller
             'productos.*.subtotal' => 'nullable|numeric|min:0',
         ]);
 
-        
 
         // Determinar la prioridad del pedido
         $prioridad = $request->reConsumo ? 'urgente' : 'normal';
@@ -71,6 +70,7 @@ class PedidosController extends Controller
                     'cantidad' => $producto['cantidad'],
                     'subtotal' => $producto['subtotal'],
                     'personalizacion' => $producto['personalizacion'] ?? '',
+                    'tipo_servicio' => 'para_llevar',
                 ]);
                 $inventario = Inventario::find($producto['id']);
                 $inventario->update(['cantidad' => $inventario->cantidad - $producto['cantidad']]);
@@ -118,8 +118,6 @@ class PedidosController extends Controller
                     ->whereNotIn('estado', ['finalizado', 'cancelado'])
                     ->firstOrFail();
 
-                    $pedido->para_mesa = 0;
-                    $pedido->para_llevar = 1;
                     if($mesa->estado != 'pendiente' || $mesa->estado != 'espera_entrega' || $mesa->estado != 'espera'){
                         $pedido->estado = 'espera_empacar';
                     }
@@ -142,10 +140,11 @@ class PedidosController extends Controller
                         }else if($pedidoProducto->estado == 'finalizado'){
                             $pedidoProducto->estado = 'finalizado';
                             $pedidoProducto->save();
-                        }else if($pedidoProducto->estado == 'espera_entrega'){
-                            $pedidoProducto->estado = 'espera_empacar';
-                            $pedidoProducto->save();
                         }
+                        // }else if($pedidoProducto->estado == 'espera_entrega'){
+                        //     $pedidoProducto->estado = 'espera_empacar';
+                        //     $pedidoProducto->save();
+                        // }
                     }
 
                     //PONER PARA LLEVAR 
@@ -162,9 +161,10 @@ class PedidosController extends Controller
             $pedido->save();
             $total = $pedido->total;
         
+            
             // Asegurar agregar correctamente productos con persona_id
             if($request->productos){
-                $this->agregarProductosAlPedido($pedido, $request->productos, $sucursalId, $total);
+                $this->agregarProductosAlPedido($pedido, $request->productos, $sucursalId, $total, $request->para_llevar);
             }
         
             // Actualizar el pedido
@@ -219,11 +219,18 @@ class PedidosController extends Controller
                     'cantidad' => $producto['cantidad'],
                     'subtotal' => $producto['subtotal'],
                     'personalizacion' => $producto['personalizacion'] ?? '',
+                    'tipo_servicio' => $request->para_llevar ? 'para_llevar' : 'para_comer',
                 ]);
                 $inventario = Inventario::find($producto['id']);
                 $inventario->update(['cantidad' => $inventario->cantidad - $producto['cantidad']]);
                 $inventario->save();
                 $total += $producto['subtotal'];
+            }
+
+            //acutalizar estado de la mesa
+            if($request->mesa){
+                $mesa = Mesa::find($request->mesa);
+                $mesa->update(['estado' => 'pendiente']);
             }
 
             $pedido->update(['total' => $total]);
@@ -246,47 +253,50 @@ class PedidosController extends Controller
         return redirect()->route('dashboard')->with('success', 'Pedido creado correctamente.');
     }
 
-    private function agregarProductosAlPedido($pedido, $productos, $sucursalId, &$total)
-    {
+    private function agregarProductosAlPedido($pedido, $productos, $sucursalId, &$total, $para_llevar)
+    {   
         foreach ($productos as $producto) {
-            // Validar si el producto ya existe en el pedido para la misma persona
-            $pedidoProducto = PedidoProducto::where('pedido_id', $pedido->id)
+            // Buscar si el producto ya existe en el pedido con el mismo estado y persona
+            $pedidoProductoExistente = PedidoProducto::where('pedido_id', $pedido->id)
                 ->where('inventario_id', $producto['id'])
                 ->where('estado', 'pendiente')
-                ->where('persona_id', $producto['persona_id'] ?? null) // Aseguramos considerar persona
+                ->where('persona_id', $producto['persona_id'] ?? null)
+                ->where('tipo_servicio', $para_llevar ? 'para_llevar' : 'para_comer')
                 ->first();
-    
-            if ($pedidoProducto) {
-                // Actualizar cantidad y subtotal si ya existe
-                $pedidoProducto->cantidad += $producto['cantidad'];
-                $pedidoProducto->subtotal += $producto['subtotal'];
-                $pedidoProducto->estado = 'pendiente';
-                $pedidoProducto->save();
+
+            if ($pedidoProductoExistente) {
+                // Actualizar cantidad y subtotal del producto existente
+                $pedidoProductoExistente->cantidad += $producto['cantidad'];
+                $pedidoProductoExistente->subtotal += $producto['subtotal'];
+                $pedidoProductoExistente->save();
             } else {
-                // Crear un nuevo registro del producto en el pedido
+                // Crear nuevo registro del producto
                 PedidoProducto::create([
                     'pedido_id' => $pedido->id,
                     'inventario_id' => $producto['id'],
-                    'persona_id' => $producto['persona_id'] ?? null, // Por si no se envía
+                    'persona_id' => $producto['persona_id'] ?? null,
                     'sucursal_id' => $sucursalId,
                     'cantidad' => $producto['cantidad'],
                     'subtotal' => $producto['subtotal'],
                     'personalizacion' => $producto['personalizacion'] ?? '',
+                    'tipo_servicio' => $para_llevar ? 'para_llevar' : 'para_comer',
+                    'estado' => 'pendiente'
                 ]);
+
+                // Actualizar inventario
                 $inventario = Inventario::find($producto['id']);
                 $inventario->update(['cantidad' => $inventario->cantidad - $producto['cantidad']]);
                 $inventario->save();
             }
-    
-            // Actualizar el total del pedido
+
+            // Actualizar total
             $total += $producto['subtotal'];
         }
-    
-        // Actualizar el total en el pedido
+
+        // Actualizar total del pedido
         $pedido->update(['total' => $total]);
         $pedido->save();
     }
-    
 
 
     public function datos(Request $request){
@@ -344,8 +354,8 @@ class PedidosController extends Controller
 
             $pedidoProductos = PedidoProducto::where('pedido_id', $pedido->id)->get();
             foreach ($pedidoProductos as $pedidoProducto) {             
-                if($pedidoProducto->estado == 'espera_entrega'){
-                    $pedidoProducto->estado = 'espera';
+                if($pedidoProducto->estado == 'espera_entrega' && $pedidoProducto->tipo_servicio == 'para_comer'){
+                    $pedidoProducto->estado = 'entregado';
                 }
                 $pedidoProducto->save();
             }
@@ -467,72 +477,100 @@ class PedidosController extends Controller
 
     public function enviaraEntregar(Request $request)
     {
-        
         $validated = $request->validate([
             'id' => 'required|exists:pedidos,id',
         ]);
 
         try {
-            $pedido = Pedidos::findOrFail($validated['id']);
-            $mesa = Mesa::find($pedido->mesa_id);
+            $pedido = Pedidos::with('mesa')->findOrFail($validated['id']);
+            $mesa = $pedido->mesa;
             
-            
-            if($pedido->tipo_pedido === 'normal' || $pedido->tipo_pedido === 'mixto'){
-                $pedido->estado = 'espera_entrega'; 
-                $mesa->estado = 'espera_entrega';
-                $mesa->save();
-            }else{
+            // Actualizar estado del pedido y mesa según tipo
+            if ($pedido->tipo_pedido === 'normal' || $pedido->tipo_pedido === 'mixto') {
+                $pedido->estado = 'espera_entrega';
+                if ($mesa) {
+                    $mesa->estado = 'espera_entrega';
+                    $mesa->save();
+                }
+            } else {
                 $pedido->estado = 'espera_empacar';
             }
             
-            
             $pedido->save();
 
+            // Actualizar estado de productos
             $pedidoProductos = PedidoProducto::where('pedido_id', $pedido->id)->get();
             foreach ($pedidoProductos as $pedidoProducto) {
-                if($pedido->tipo_pedido === 'normal'){
-                    if($pedidoProducto->estado === 'pendiente'){
-                        $pedidoProducto->estado = 'espera_entrega';
-                    }
-                }else{
-                    if($pedidoProducto->estado === 'espera' || $pedidoProducto->estado === 'finalizar'){
-                        $pedidoProducto->estado = 'finalizar';
-                    }else{
-                        $pedidoProducto->estado = 'espera_entrega';
-                    }
+                $nuevoEstado = $this->determinarNuevoEstadoProducto($pedido->tipo_pedido, $pedidoProducto->estado);
+                if ($nuevoEstado) {
+                    $pedidoProducto->estado = $nuevoEstado;
+                    $pedidoProducto->save();
                 }
-                
-                $pedidoProducto->save();
             }
 
+            // Actualizar seguimiento
             $user = Auth::user();
-            $sucursalId = $user->sucursal_id;
+            $seguimientoOrden = SeguimientoOrden::where('pedido_id', $pedido->id)
+                ->where('sucursal_id', $user->sucursal_id)
+                ->first();
 
-            $seguimientoOrden = SeguimientoOrden::
-                  where('pedido_id', $pedido->id)
-                ->where('sucursal_id', $sucursalId)->first();
+            // Determinar tipos de servicio y enviar eventos
+            $tiposServicio = $this->determinarTiposServicio($pedidoProductos);
+            $pedidoConProductos = $pedido->load('productos.producto');
 
-            //COCINAR PEDIDO
-            if($pedido->para_llevar){
-                $pedidoConProductos = Pedidos::with(['productos.producto'])->findOrFail($pedido->id);
+            if ($tiposServicio['para_llevar']) {
                 broadcast(new CocinarDeliveryPedidoEvent($pedidoConProductos));
-            }else{
-                $pedidoConProductos = Pedidos::with(['productos.producto'])->findOrFail($pedido->id);
+            }
+            if ($tiposServicio['para_comer']) {
                 broadcast(new CocinarPedidoEvent($pedidoConProductos));
             }
             
-            
-            $seguimientoOrden->cocino = $user->id;
-            $seguimientoOrden->hora_cocino = now();
-            $seguimientoOrden->estado = 'cocinado';
-            $seguimientoOrden->save();
+            // Actualizar seguimiento de orden
+            $seguimientoOrden->update([
+                'cocino' => $user->id,
+                'hora_cocino' => now(),
+                'estado' => 'cocinado'
+            ]);
 
             return back()->with('success', 'Pedido entregado exitosamente.');
             
         } catch (\Exception $e) {
             return redirect()->route('cocina')->with('error', 'Pedido no pudo ser completado');
-            
         }
+    }
+
+    private function determinarNuevoEstadoProducto($tipoPedido, $estadoActual)
+    {
+        if ($tipoPedido === 'normal' && $estadoActual === 'pendiente' && $estadoActual !== 'entregado') {
+            return 'espera_entrega';
+        }
+        
+        if ($tipoPedido !== 'normal') {
+            if (in_array($estadoActual, ['espera', 'finalizar', 'entregado'])) {
+                return 'entregado';
+            }
+            return 'espera_entrega';
+        }
+
+        return null;
+    }
+
+    private function determinarTiposServicio($productos)
+    {
+        $tipos = [
+            'para_llevar' => false,
+            'para_comer' => false
+        ];
+
+        foreach ($productos as $producto) {
+            if ($producto->tipo_servicio === 'para_llevar') {
+                $tipos['para_llevar'] = true;
+            } else if ($producto->tipo_servicio === 'para_comer') {
+                $tipos['para_comer'] = true;
+            }
+        }
+
+        return $tipos;
     }
 
     public function enviaraCaja(Request $request)
@@ -597,164 +635,153 @@ class PedidosController extends Controller
         $user = Auth::user();
         $sucursalId = $user->sucursal_id;
 
-        // $ordenesPendientesEntrega = Pedidos::with(['productos' => function ($query) {
-        //     $query->where('estado', 'para_llevar'); 
-        // }, 'productos.producto', 'mesa'])
-        // ->where('sucursal_id', $sucursalId)
-        // ->where('estado', 'espera_entrega')
-        // ->where('para_mesa', 1)
-        // ->get();
-
         $ordenesPendientesParaLlevar = Pedidos::with(['productos.producto', 'mesa'])
-            
             ->where('sucursal_id', $sucursalId)
-            ->whereIn('estado', ['espera_empacar', 'para_llevar', 'espera_entrega'])
-            ->where('tipo_pedido', 'mixto')
+            ->whereIn('estado', ['espera_empacar', 'para_llevar', 'espera_entrega', 'espera'])
+            
             ->where('para_llevar', 1)
             ->get();
     
 
+        
         $ordenesPendientesEntrega = Pedidos::with(['productos.producto', 'mesa'])
-            
-            ->with('mesa')
             ->where('sucursal_id', $sucursalId)
-            ->whereIn('estado', ['espera_empacar', 'para_llevar'])
-            ->whereIn('tipo_pedido', ['para_llevar', 'mixto'])
-            ->where('para_llevar', 1)
+            ->whereIn('estado', ['espera_empacar', 'para_llevar', 'espera_entrega', 'espera'])
+            ->where('para_llevar', 0)
+            ->whereHas('productos', function($query) {
+                $query->where('tipo_servicio', 'para_llevar');
+                $query->where('estado', '!=', 'entregado');
+            })
             ->get();
+
+
         $ordenes = $ordenesPendientesEntrega->merge($ordenesPendientesParaLlevar);
 
         return Inertia::render('Empacadores/index', [
-            'ordenes' => $ordenes
+            'ordenes' => $ordenes,
+            'ordenesPendientesEntrega' => $ordenesPendientesEntrega,
+            'ordenesPendientesParaLlevar' => $ordenesPendientesParaLlevar
         ]);
     }
 
-    public function terminar_pedido(Request $request){
-        
+    public function completar_pedido(Request $request) {
         $validated = $request->validate([
             'id' => 'required|exists:pedidos,id',
         ]);
-        $user = Auth::user();
-        $sucursalId = $user->sucursal_id;
-        $pedido = Pedidos::findOrFail($validated['id']);
-        
-        $seguimientoOrden = SeguimientoOrden::
-                where('pedido_id', $pedido->id)
-                ->where('sucursal_id', $sucursalId)->first();
 
         try {
-
-            if($pedido->pagado === 1 && $pedido->estado == 'espera_empacar'){
-                $seguimientoOrden->empaco = $user->id;
-                $seguimientoOrden->hora_empaco = now();
-                $seguimientoOrden->estado = 'empacado';
-                $seguimientoOrden->save();
-                $pedido->estado = 'finalizado'; 
-            }else if($pedido->estado === 'pendiente' || $pedido->estado === 'espera_empacar'){
-                $seguimientoOrden->empaco = $user->id;
-                $seguimientoOrden->hora_empaco = now();
-                $seguimientoOrden->estado = 'empacado';
-                $seguimientoOrden->save();
-                $pedido->pagado = 1; 
-                broadcast(new PagarPedidoEvent($pedido));
-            }else if($pedido->estado === 'espera_pago'){
-                $pedido->estado = 'finalizado';
-                $seguimientoOrden->cobro = $user->id;
-                $seguimientoOrden->hora_cobro = now();
-                $seguimientoOrden->estado = 'cobro';
-                $seguimientoOrden->save();
-            }
-                
-
-            $pedido->metodo_pago = $request->paymentMethod; 
-            $pedido->descuento = $request->discount; 
-            $pedido->propina = $request->tip; 
-            $pedido->dinero_recibido = $request->cashReceived; 
+            $user = Auth::user();
+            $sucursalId = $user->sucursal_id;
+            $pedido = Pedidos::findOrFail($validated['id']);
             
-            
+            $seguimientoOrden = SeguimientoOrden::where('pedido_id', $pedido->id)
+                ->where('sucursal_id', $sucursalId)->first();
 
-            if(($pedido->estado === 'para_llevar' || $pedido->estado === 'espera_entrega') && $pedido->tipo_pedido === 'mixto' && $pedido->pagado){
+            
+            $seguimientoOrden->empaco = $user->id;
+            $seguimientoOrden->hora_empaco = now();
+            $seguimientoOrden->estado = 'empacado';
+            $seguimientoOrden->save();
+
+            if($pedido->pagado === 1) {
                 $pedido->estado = 'finalizado';
                 $mesa = Mesa::find($pedido->mesa_id);
-                $mesa->estado = 'libre';
-                $mesa->save();
-
-            }
-
-            if(($pedido->estado === 'para_llevar' || $pedido->estado === 'espera_entrega') && $pedido->tipo_pedido === 'mixto'){
-                $pedido->estado = 'espera_empacar';
-                $pedido->pagado = 1;
-                $mesa = Mesa::find($pedido->mesa_id);
-                $mesa->estado = 'espera_empacar';
-                $mesa->save();
-                broadcast(new PagarPedidoEvent($pedido));
-            }
-            
-            if($pedido->estado === 'finalizado'){
-                $mesa = Mesa::find($pedido->mesa_id);
-                if($mesa){
+                if($mesa) {
                     $mesa->estado = 'libre';
                     $mesa->save();
                 }
                 broadcast(new TerminarPedidoEvent($pedido));
             }
+        
+
             $pedido->save();
-                
+
             $pedidoProductos = PedidoProducto::where('pedido_id', $pedido->id)->get();
             foreach ($pedidoProductos as $pedidoProducto) {
-
-                if($pedido->pagado === 1 && $pedidoProducto->estado === 'espera_empacar'){
+                if($pedido->pagado === 1 && $pedidoProducto->estado === 'espera_empacar' && $pedidoProducto->tipo_servicio === 'para_llevar') {
                     $pedidoProducto->estado = 'finalizado';
-                    $pedido->estado = 'finalizado';
-                    $pedidoProducto->save();
-                }else if($pedidoProducto->estado === 'pendiente' || $pedidoProducto->estado === 'espera_empacar'){
-                    $pedidoProducto->estado = 'pendiente';
-                    $pedidoProducto->save();
-                }else if($pedidoProducto->estado === 'espera_pago'){
-                    $pedidoProducto->estado = 'finalizado';
-                    $pedidoProducto->save();
+                } else if(($pedidoProducto->estado === 'pendiente' || $pedidoProducto->estado === 'espera_empacar' || $pedidoProducto->estado === 'espera_entrega') && $pedidoProducto->tipo_servicio === 'para_llevar') {
+                    $pedidoProducto->estado = 'entregado';
                 }
-                
+                $pedidoProducto->save();
             }
 
+            return back()->with('success', 'Pedido completado exitosamente.');
+
+        } catch (\Exception $e) {
+            return back()->with('error', 'Pedido no pudo ser completado');
+        }
+    }
+
+    public function pagar_pedido(Request $request) {
+        $validated = $request->validate([
+            'id' => 'required|exists:pedidos,id',
+            'paymentMethod' => 'required|string',
+            'discount' => 'nullable|numeric',
+            'tip' => 'nullable|numeric', 
+            'cashReceived' => 'nullable|numeric'
+        ]);
+
+        try {
             $user = Auth::user();
-            $sucursalId = $user->sucursal_id;          
-            $dinerototal = 0;
-            if($pedido->descuento){
-                $dinerototal = $pedido->total - $pedido->descuento;
-            }else{
-                $dinerototal = $pedido->total;
-            }
-            
-            
-            $corteCajaController = new CorteCajaController();
-            
-            $fecha = Carbon::now()->format('Y-m-d');
+            $sucursalId = $user->sucursal_id;
+            $pedido = Pedidos::findOrFail($validated['id']);
 
-            $corteCaja = $corteCaja = CorteCaja::where('sucursal_id', $user->sucursal_id)
+            $seguimientoOrden = SeguimientoOrden::where('pedido_id', $pedido->id)
+                ->where('sucursal_id', $sucursalId)->first();
+
+            $pedido->metodo_pago = $request->paymentMethod;
+            $pedido->descuento = $request->discount;
+            $pedido->propina = $request->tip;
+            $pedido->dinero_recibido = $request->cashReceived;
+            $pedido->pagado = 1;
+
+            if($pedido->pagado === 1) {
+                $pedido->estado = 'finalizado';
+                $seguimientoOrden->cobro = $user->id;
+                $seguimientoOrden->hora_cobro = now();
+                $seguimientoOrden->estado = 'cobro';
+                $seguimientoOrden->save();
+
+                $mesa = Mesa::find($pedido->mesa_id);
+                if($mesa) {
+                    $mesa->estado = 'libre';
+                    $mesa->save();
+                }
+                broadcast(new TerminarPedidoEvent($pedido));
+            }
+
+            $pedido->save();
+
+            // Actualizar corte de caja
+            $corteCajaController = new CorteCajaController();
+            $fecha = Carbon::now()->format('Y-m-d');
+            
+            $dinerototal = $pedido->descuento ? 
+                $pedido->total - $pedido->descuento : 
+                $pedido->total;
+
+            $corteCaja = CorteCaja::where('sucursal_id', $user->sucursal_id)
                 ->where('fecha', $fecha)
                 ->where('status', true)
                 ->first();
-                
 
-            
-                
-            if($corteCaja){
-                if($pedido->metodo_pago === 'cash'){
+            if($corteCaja) {
+                if($pedido->metodo_pago === 'cash') {
                     $corteCaja->dinero_total += $dinerototal;
                     $corteCaja->total_entradas += $dinerototal;
                     $corteCaja->ventas_total += $dinerototal;
                     $corteCaja->dinero_en_efectivo += $dinerototal;
                     $corteCaja->save();
                     $corteCajaController->crearLogCaja($sucursalId, $user->id, $dinerototal, 'venta', 'Primer registro');
-                }else if($pedido->metodo_pago === 'card'){
+                } else if($pedido->metodo_pago === 'card') {
                     $corteCaja->dinero_total += $dinerototal;
                     $corteCaja->total_entradas += $dinerototal;
                     $corteCaja->ventas_total += $dinerototal;
                     $corteCaja->dinero_tarjeta += $dinerototal;
                     $corteCaja->save();
                     $corteCajaController->crearLogCaja($sucursalId, $user->id, $dinerototal, 'venta', 'Primer registro', 'tarjeta');
-                }else{
+                } else {
                     $corteCaja->dinero_total += $dinerototal;
                     $corteCaja->total_entradas += $dinerototal;
                     $corteCaja->ventas_total += $dinerototal;
@@ -762,9 +789,8 @@ class PedidosController extends Controller
                     $corteCaja->save();
                     $corteCajaController->crearLogCaja($sucursalId, $user->id, $dinerototal, 'venta', 'Primer registro', 'transferencia');
                 }
-            }else{
-                //metodo de pago efectivo 
-                if($pedido->metodo_pago === 'cash'){
+            } else {
+                if($pedido->metodo_pago === 'cash') {
                     CorteCaja::create([
                         'sucursal_id' => $user->sucursal_id,
                         'usuario_id' => $user->id,
@@ -775,7 +801,7 @@ class PedidosController extends Controller
                         'dinero_en_efectivo' => $dinerototal
                     ]);
                     $corteCajaController->crearLogCaja($sucursalId, $user->id, $dinerototal, 'venta', 'Primer registro');
-                }else if($pedido->metodo_pago === 'card'){
+                } else if($pedido->metodo_pago === 'card') {
                     CorteCaja::create([
                         'sucursal_id' => $user->sucursal_id,
                         'usuario_id' => $user->id,
@@ -786,7 +812,7 @@ class PedidosController extends Controller
                         'dinero_tarjeta' => $dinerototal
                     ]);
                     $corteCajaController->crearLogCaja($sucursalId, $user->id, $dinerototal, 'venta', 'Primer registro', 'tarjeta');
-                }else{
+                } else {
                     CorteCaja::create([
                         'sucursal_id' => $user->sucursal_id,
                         'usuario_id' => $user->id,
@@ -799,10 +825,11 @@ class PedidosController extends Controller
                     $corteCajaController->crearLogCaja($sucursalId, $user->id, $dinerototal, 'venta', 'Primer registro', 'transferencia');
                 }
             }
-            return back()->with('success', 'Pedido entregado exitosamente.');
-            
+
+            return back()->with('success', 'Pago procesado exitosamente.');
+
         } catch (\Exception $e) {
-            return back()->with('error', 'Pedido no pudo ser completado');
+            return back()->with('error', 'Error al procesar el pago');
         }
     }
 
@@ -871,7 +898,10 @@ class PedidosController extends Controller
         } else {
             $this->cancelarPorOrden($request->id);
         }
-        return redirect()->route('dashboard')->with('success', 'Pedido eliminado correctamente.');
+        
+        //regresar  a la pagina anterior
+        return redirect()->back()->with('success', 'Pedido eliminado correctamente.');
+        
     }
 
     private function cancelarPorMesa($mesaId)

@@ -23,6 +23,7 @@ class CocinaController extends Controller
             ->where('pedido_productos.estado', 'pendiente')
             ->where('pedidos.sucursal_id', $sucursalId)
             ->select('pedidos.*')
+            ->orderBy('pedidos.prioridad', 'desc')
             ->distinct()
             ->get();
 

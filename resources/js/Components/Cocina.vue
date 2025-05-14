@@ -41,8 +41,14 @@
                       <div class="flex flex-col">
                         <span class="text-gray-900 text-2xl">{{ item?.producto?.nombre }}</span>
                         <span v-if="item?.producto?.detalle" class="text-lg text-gray-500">{{ item?.producto?.detalle }}</span>
-                        <div v-if="item?.personalizacion" class="capitalize flex gap-2 my-1" v-for="observacion in item?.personalizacion.split(', ')">
-                          <span :class="{
+                        <!--si es para llevar, mostrar para llevar color naranja, si es para comer, mostrar para comer color verde-->
+                        <span v-if="item?.tipo_servicio" :class="{
+                          'text-lg text-gray-500 bg-green-200 px-2 rounded-xl': item?.tipo_servicio === 'para_comer',
+                          'text-lg text-gray-500 bg-orange-200 px-2 rounded-xl': item?.tipo_servicio === 'para_llevar'
+                        }">{{ item?.tipo_servicio === 'para_llevar' ? 'Para llevar' : 'Para comer' }}</span>
+
+                        <div v-if="item?.personalizacion" class="capitalize flex gap-2 my-1" >
+                          <span v-for="observacion in item?.personalizacion.split(', ')" :key="observacion" :class="{
                             'text-white px-2 py-1 rounded-lg': true,
                             'bg-green-500': observacion.includes('con todo'),
                             'bg-orange-500': !observacion.includes('con todo')
@@ -103,7 +109,7 @@
 </template>
 
 <script setup>
-import { computed } from 'vue';
+import { computed, ref } from 'vue';
 import {
   CheckIcon,
   ClockIcon,
@@ -118,8 +124,45 @@ import { router, usePage } from '@inertiajs/vue3';
 import Swal from 'sweetalert2';
 
 const { props } = usePage();
+const localOrders = ref(props.pedidos || []);
 
-const orders = computed(() => props.pedidos || []);
+const orders = computed({
+  get: () => {
+    return sortOrdersByPriority(localOrders.value);
+  },
+  set: (newValue) => {
+    localOrders.value = sortOrdersByPriority(newValue);
+  }
+});
+
+// Función para ordenar pedidos por prioridad
+function sortOrdersByPriority(ordersArray) {
+  return [...ordersArray].sort((a, b) => {
+    // Definir el orden de prioridad
+    const priorityOrder = {
+      'urgente_old': 0,    // Pedidos urgentes viejos
+      'urgente_new': 1,    // Nuevos pedidos urgentes
+      'normal_old': 2,     // Pedidos normales viejos
+      'normal_new': 3      // Nuevos pedidos normales
+    };
+
+    // Determinar la categoría de cada pedido
+    const getPriorityCategory = (order) => {
+      const isUrgent = order.prioridad === 'urgente';
+      const isOld = isOrderUrgent(order.created_at);
+      
+      if (isUrgent && isOld) return 'urgente_old';
+      if (isUrgent && !isOld) return 'urgente_new';
+      if (!isUrgent && isOld) return 'normal_old';
+      return 'normal_new';
+    };
+
+    const priorityA = priorityOrder[getPriorityCategory(a)];
+    const priorityB = priorityOrder[getPriorityCategory(b)];
+    
+    return priorityA - priorityB;
+  });
+}
 
 // Helper Functions
 function isOrderUrgent(order) {
@@ -176,7 +219,10 @@ const completeOrder = (orderId) => {
       preserveScroll: true,
       preserveState: false,
       onSuccess: () => {
-        orders.value = props.pedidos || [];
+        const index = localOrders.value.findIndex((o) => o.id === orderId);
+        if (index !== -1) {
+          localOrders.value.splice(index, 1);
+        }
         Toast.fire({
           icon: 'success',
           title: `Pedido #${orderId} completado exitosamente`
@@ -270,10 +316,11 @@ window.Echo.channel(`pedidos_sucursal_${sucursalId}`)
     axios.get(`/getPedido/${data.id}`)
       .then(response => {
         const pedido = response.data;
-        const ordenExistente = orders.value.find((orden) => orden?.id === pedido.id);
+        const ordenExistente = localOrders.value.find((orden) => orden?.id === pedido.id);
         if (!ordenExistente) {
-          orders.value.push(pedido);
+          localOrders.value.push(pedido);
           showToast('success', 'Nuevo pedido recibido');
+          sortOrdersByPriority(localOrders.value);
         }
       })
       .catch(error => {
@@ -284,21 +331,23 @@ window.Echo.channel(`pedidos_sucursal_${sucursalId}`)
     axios.get(`/getPedido/${data.id}`)
       .then(response => {
         const pedido = response.data;
-        const ordenExistente = orders.value.find((orden) => orden?.id === pedido.id);
+        const ordenExistente = localOrders.value.find((orden) => orden?.id === pedido.id);
         if (!pedido.mesa_id) {
           if (ordenExistenteParaLlevar) {
             Object.assign(ordenExistenteParaLlevar, pedido);
             showToast('success', 'Pedido para llevar actualizado');
+            sortOrdersByPriority(localOrders.value);
           } else {
-            orders.value.push(pedido);
+            localOrders.value.push(pedido);
             showToast('success', 'Nuevo pedido para llevar añadido');
+            sortOrdersByPriority(localOrders.value);
           }
         } else {
           if (ordenExistente) {
             Object.assign(ordenExistente, pedido);
             showToast('success', 'Pedido en mesa actualizado');
           } else {
-            orders.value.push(pedido);
+            localOrders.value.push(pedido);
             showToast('success', 'Nuevo pedido en mesa añadido');
           }
         }
@@ -311,13 +360,13 @@ window.Echo.channel(`pedidos_sucursal_${sucursalId}`)
     axios.get(`/getPedido/${data.id}`)
       .then(response => {
         const pedido = response.data;
-        const ordenExistente = orders.value.find((orden) => orden?.id === pedido.id);
+        const ordenExistente = localOrders.value.find((orden) => orden?.id === pedido.id);
         if (!pedido.mesa_id) {
           if (ordenExistenteParaLlevar) {
             Object.assign(ordenExistenteParaLlevar, pedido);
             showToast('success', 'Pedido para llevar actualizado');
           } else {
-            orders.value.push(pedido);
+            localOrders.value.push(pedido);
             showToast('success', 'Nuevo pedido para llevar añadido');
           }
         } else {
@@ -325,7 +374,7 @@ window.Echo.channel(`pedidos_sucursal_${sucursalId}`)
             Object.assign(ordenExistente, pedido);
             showToast('success', 'Pedido en mesa actualizado');
           } else {
-            orders.value.push(pedido);
+            localOrders.value.push(pedido);
             showToast('success', 'Nuevo pedido en mesa añadido');
           }
         }
@@ -338,9 +387,9 @@ window.Echo.channel(`pedidos_sucursal_${sucursalId}`)
     axios.get(`/getPedido/${data.id}`)
       .then(response => {
         const pedido = response.data;
-        const index = orders.value.findIndex((orden) => orden?.id === pedido.id);
+        const index = localOrders.value.findIndex((orden) => orden?.id === pedido.id);
         if (index !== -1) {
-          orders.value.splice(index, 1);
+          localOrders.value.splice(index, 1);
           showToast('success', 'Pedido completado correctamente');
         } else {
           console.warn('Pedido no encontrado en la lista');
@@ -354,9 +403,9 @@ window.Echo.channel(`pedidos_sucursal_${sucursalId}`)
     axios.get(`/getPedido/${data.id}`)
       .then(response => {
         const pedido = response.data;
-        const index = orders.value.findIndex((orden) => orden?.id === pedido.id);
+        const index = localOrders.value.findIndex((orden) => orden?.id === pedido.id);
         if (index !== -1) {
-          orders.value.splice(index, 1);
+          localOrders.value.splice(index, 1);
           showToast('success', 'Pedido completado correctamente');
         } else {
           console.warn('Pedido no encontrado en la lista');
@@ -369,7 +418,7 @@ window.Echo.channel(`pedidos_sucursal_${sucursalId}`)
   .listen('.update-mesas', (data) => {
     const mesaNueva = data.mesaNew;
     const mesaVieja = data.mesaOld;
-    const ordenExistente = orders.value.find((orden) => orden?.mesa_id === mesaVieja.id);
+    const ordenExistente = localOrders.value.find((orden) => orden?.mesa_id === mesaVieja.id);
     if (ordenExistente) {
       ordenExistente.mesa = mesaNueva;
       showToast('success', `Pedido actualizado a la nueva mesa: ${data.mesaNew.nombre}`);
@@ -381,13 +430,13 @@ window.Echo.channel(`pedidos_sucursal_${sucursalId}`)
     axios.get(`/getPedido/${data.id}`)
       .then(response => {
         const pedido = response.data;
-        const ordenExistente = orders.value.find((orden) => orden?.id === pedido.id);
+        const ordenExistente = localOrders.value.find((orden) => orden?.id === pedido.id);
         if (!pedido.mesa_id) {
           if (ordenExistenteParaLlevar) {
             Object.assign(ordenExistenteParaLlevar, pedido);
             showToast('success', 'Pedido para llevar actualizado');
           } else {
-            orders.value.push(pedido);
+            localOrders.value.push(pedido);
             showToast('success', 'Nuevo pedido para llevar añadido');
           }
         } else {
@@ -395,7 +444,7 @@ window.Echo.channel(`pedidos_sucursal_${sucursalId}`)
             Object.assign(ordenExistente, pedido);
             showToast('success', 'Pedido en mesa actualizado');
           } else {
-            orders.value.push(pedido);
+            localOrders.value.push(pedido);
             showToast('success', 'Nuevo pedido en mesa añadido');
           }
         }
@@ -407,7 +456,7 @@ window.Echo.channel(`pedidos_sucursal_${sucursalId}`)
   .listen('.update-mesas', (data) => {
     const mesaNueva = data.mesaNew;
     const mesaVieja = data.mesaOld;
-    const ordenExistente = orders.value.find((orden) => orden?.mesa_id === mesaVieja.id);
+    const ordenExistente = localOrders.value.find((orden) => orden?.mesa_id === mesaVieja.id);
     if (ordenExistente) {
       ordenExistente.mesa = mesaNueva;
       showToast('success', `Pedido actualizado a la nueva mesa: ${data.mesaNew.nombre}`);
@@ -417,9 +466,9 @@ window.Echo.channel(`pedidos_sucursal_${sucursalId}`)
   })
   .listen('.cancelar-pedido', (data) => {
     const order = data.pedido;
-    const index = orders.value.findIndex((o) => o.id === order.id);
+    const index = localOrders.value.findIndex((o) => o.id === order.id);
     if (index !== -1) {
-      orders.value.splice(index, 1);
+      localOrders.value.splice(index, 1);
     }
     showToast('info', 'Pedido cancelado');
   });

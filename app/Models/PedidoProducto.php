@@ -7,7 +7,7 @@ use App\Models\Pedidos;
 
 class PedidoProducto extends Model
 {
-    protected $fillable = ['pedido_id', 'inventario_id', 'persona_id', 'cantidad', 'subtotal', 'personalizacion'];
+    protected $fillable = ['pedido_id', 'inventario_id', 'persona_id', 'cantidad', 'subtotal', 'personalizacion', 'tipo_servicio'];
 
     public function pedido()
     {

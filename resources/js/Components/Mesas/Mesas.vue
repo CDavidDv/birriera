@@ -455,6 +455,7 @@ const cancelOrden = (id, mesa= false) => {
     if (result.isConfirmed) {
         router.post('/cancelOrden', {id , mesa},{
           onSuccess: (response) => {
+            showTableOptions.value = false
           tables.value = response.props.mesas
         },
         onerror: (error) => {

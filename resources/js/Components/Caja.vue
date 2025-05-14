@@ -269,7 +269,7 @@ const procesarPago = () => {
 
   loading.value = true;
 
-  router.post('/terminar_pedido', {
+  router.post('/pagar_pedido', {
     id: selectedOrderId.value,
     total: total.value,
     paymentMethod: selectedPaymentMethod.value,
@@ -486,8 +486,7 @@ const printTicket = (id) => {
       total: order.total || 0,
       descuento: order.descuento || 0,
       propina: order.propina || 0,
-      fecha: order.created_at, // Fecha del pedido
-      // Puedes agregar más campos según sea necesario
+      fecha: order.created_at, 
       tipo: order.para_mesa ? 'Local' : 'Para llevar',
     }),
   })
